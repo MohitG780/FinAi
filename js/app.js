@@ -145,7 +145,10 @@
     setTimeout(() => {
       authScreen.classList.add('hidden');
       authScreen.classList.remove('exit');
-      DB.seed().then(() => initSplash());
+      
+      // Run seed in background so it doesn't block UI if Firestore hangs
+      DB.seed().catch(err => console.warn('[FinAI] Seed error:', err));
+      initSplash();
     }, 420);
   }
 
@@ -1188,7 +1191,7 @@
   }
 
   /* ── Boot ───────────────────────────────────────────────── */
-  document.addEventListener('DOMContentLoaded', () => {
+  function boot() {
     initTheme();
 
     // Wait for Firebase to resolve auth state before showing auth screen
@@ -1197,8 +1200,9 @@
       if (window.AUTH && window.AUTH.onReady && window.DB) {
         AUTH.onReady((user) => {
           if (user) {
-            // Already logged in — seed DB then go straight to app
-            DB.seed().then(() => launchApp());
+            // Already logged in — run seed in background, don't block
+            DB.seed().catch(err => console.warn('[FinAI] Seed error:', err));
+            launchApp();
           } else {
             // Not logged in — show auth screen
             const authScreen = $('auth-screen');
@@ -1212,6 +1216,13 @@
       }
     }
     waitForFirebase();
-  });
+  }
+
+  // If DOM is already loaded (common with type="module"), boot immediately.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
 
 })();
