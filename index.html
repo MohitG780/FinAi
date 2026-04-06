@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>FinAI — AI Financial Analyst</title>
+  <meta name="description" content="Analyse financial documents instantly using NLP Transformers and Explainable AI. Get sentiment scores, summaries, and risk insights in seconds." />
+  <meta name="theme-color" content="#0a0e1a" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ===== AUTH SCREEN ===== -->
+  <div id="auth-screen" class="hidden">
+    <!-- Theme toggle on auth screen -->
+    <button class="theme-toggle-btn" id="auth-theme-btn" aria-label="Toggle theme" style="position:fixed;top:16px;right:calc(max(0px,50vw - 215px) + 12px);z-index:9010">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+
+    <div class="auth-card" id="auth-card">
+      <!-- Logo -->
+      <div class="auth-logo">
+        <div class="auth-logo-icon">
+          <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="30" cy="30" r="28" stroke="url(#alg1)" stroke-width="2"/>
+            <path d="M15 38 L22 28 L30 33 L38 20 L45 25" stroke="url(#alg2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="22" cy="28" r="2.5" fill="#60a5fa"/>
+            <circle cx="30" cy="33" r="2.5" fill="#818cf8"/>
+            <circle cx="38" cy="20" r="2.5" fill="#f59e0b"/>
+            <defs>
+              <linearGradient id="alg1" x1="0" y1="0" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#8b5cf6"/>
+              </linearGradient>
+              <linearGradient id="alg2" x1="15" y1="38" x2="45" y2="20" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#60a5fa"/><stop offset="50%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#f59e0b"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <span class="auth-logo-name">FinAI</span>
+      </div>
+
+      <!-- Login Panel -->
+      <div id="auth-login-panel">
+        <h1 class="auth-heading">Welcome back</h1>
+        <p class="auth-subheading">Sign in to your AI analyst dashboard</p>
+        <form class="auth-form" id="login-form" novalidate>
+          <div class="auth-field">
+            <label for="login-email">Email address</label>
+            <div class="auth-input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <input class="auth-input" id="login-email" type="email" placeholder="you@example.com" autocomplete="email" required />
+            </div>
+          </div>
+          <div class="auth-field">
+            <label for="login-password">Password</label>
+            <div class="auth-input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input class="auth-input" id="login-password" type="password" placeholder="Your password" autocomplete="current-password" required />
+              <button type="button" class="auth-pw-toggle" id="login-pw-toggle" aria-label="Toggle password">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <p class="auth-error-msg" id="login-error"></p>
+          <button type="submit" class="auth-submit-btn" id="login-submit-btn">Sign In</button>
+        </form>
+        <p class="auth-switch">Don't have an account? <button class="auth-switch-link" id="go-signup">Create one</button></p>
+      </div>
+
+      <!-- Signup Panel -->
+      <div id="auth-signup-panel" class="hidden">
+        <h1 class="auth-heading">Create account</h1>
+        <p class="auth-subheading">Start your AI-powered financial journey</p>
+        <form class="auth-form" id="signup-form" novalidate>
+          <div class="auth-field">
+            <label for="signup-name">Full name</label>
+            <div class="auth-input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input class="auth-input" id="signup-name" type="text" placeholder="Mohit Gupta" autocomplete="name" required />
+            </div>
+          </div>
+          <div class="auth-field">
+            <label for="signup-email">Email address</label>
+            <div class="auth-input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <input class="auth-input" id="signup-email" type="email" placeholder="you@example.com" autocomplete="email" required />
+            </div>
+          </div>
+          <div class="auth-field">
+            <label for="signup-password">Password</label>
+            <div class="auth-input-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input class="auth-input" id="signup-password" type="password" placeholder="Min 8 characters" autocomplete="new-password" required />
+              <button type="button" class="auth-pw-toggle" id="signup-pw-toggle" aria-label="Toggle password">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <p class="auth-error-msg" id="signup-error"></p>
+          <button type="submit" class="auth-submit-btn" id="signup-submit-btn">Create Account</button>
+          <p class="auth-terms">By creating an account you agree to our Terms of Service and Privacy Policy.</p>
+        </form>
+        <p class="auth-switch">Already have an account? <button class="auth-switch-link" id="go-login">Sign in</button></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SPLASH SCREEN ===== -->
+  <div id="splash-screen" class="hidden">
+    <div class="splash-bg"></div>
+    <div class="splash-content">
+      <div class="splash-logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="30" cy="30" r="28" stroke="url(#lg1)" stroke-width="2"/>
+            <path d="M15 38 L22 28 L30 33 L38 20 L45 25" stroke="url(#lg2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="22" cy="28" r="2.5" fill="#60a5fa"/>
+            <circle cx="30" cy="33" r="2.5" fill="#818cf8"/>
+            <circle cx="38" cy="20" r="2.5" fill="#f59e0b"/>
+            <path d="M28 14 L32 14 M28 46 L32 46 M14 28 L14 32 M46 28 L46 32" stroke="#334155" stroke-width="1.5" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="lg1" x1="0" y1="0" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#3b82f6"/>
+                <stop offset="100%" stop-color="#8b5cf6"/>
+              </linearGradient>
+              <linearGradient id="lg2" x1="15" y1="38" x2="45" y2="20" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#60a5fa"/>
+                <stop offset="50%" stop-color="#a78bfa"/>
+                <stop offset="100%" stop-color="#f59e0b"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <h1 class="splash-title">FinAI</h1>
+        <p class="splash-subtitle">AI Financial Analyst</p>
+      </div>
+      <div class="splash-loader">
+        <div class="loader-bar"><div class="loader-fill"></div></div>
+        <p class="loader-text">Initializing NLP Engine…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MAIN APP ===== -->
+  <div id="app" class="hidden">
+
+    <!-- TOP NAV -->
+    <header class="top-nav">
+      <div class="nav-left">
+        <div class="nav-logo-icon">
+          <svg viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="url(#navlg)" stroke-width="1.5"/><path d="M10 26 L15 18 L20 22 L26 13 L30 17" stroke="url(#navlg2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="navlg" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient><linearGradient id="navlg2" x1="10" y1="26" x2="30" y2="13" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient></defs></svg>
+        </div>
+        <span class="nav-brand">FinAI</span>
+      </div>
+      <div class="nav-right">
+        <!-- Theme Toggle -->
+        <button class="theme-toggle-btn" id="theme-btn" aria-label="Toggle theme">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+        <!-- Notification -->
+        <button class="nav-icon-btn" id="notif-btn" aria-label="Notifications">
+          <span class="notif-dot"></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </button>
+        <!-- User Avatar -->
+        <div class="user-avatar-chip" id="avatar-chip" aria-label="User menu">MG</div>
+      </div>
+    </header>
+
+    <!-- PAGE CONTAINER -->
+    <main class="page-container">
+
+      <!-- ====== PAGE: DASHBOARD ====== -->
+      <section class="page active" id="page-dashboard">
+
+        <!-- Live Market Ticker -->
+        <div class="market-ticker-strip" id="market-ticker-strip">
+          <div class="ticker-track" id="ticker-track">
+            <!-- populated by JS -->
+          </div>
+        </div>
+
+        <!-- Greeting -->
+        <div class="greeting-section">
+          <div>
+            <p class="greeting-time">Good Afternoon 👋</p>
+            <h2 class="greeting-name">Mohit Gupta</h2>
+          </div>
+          <div class="market-badge" id="market-status-badge">
+            <span class="market-dot pulse"></span>
+            <span id="market-status-text">Markets Live</span>
+          </div>
+        </div>
+
+        <!-- Live Market Indices -->
+        <div class="section-header">
+          <h3 class="section-title">📊 Market Indices</h3>
+          <span class="badge-live" id="data-source-badge">LIVE</span>
+        </div>
+        <div class="indices-row" id="indices-row">
+          <!-- populated by JS -->
+        </div>
+
+        <!-- Stock Watchlist -->
+        <div class="section-header" style="margin-top:20px">
+          <h3 class="section-title">📈 Stock Watchlist</h3>
+          <span class="market-refresh-timer" id="refresh-timer">Refreshes in 60s</span>
+        </div>
+        <div class="stock-watchlist" id="stock-watchlist">
+          <!-- populated by JS -->
+        </div>
+
+        <!-- Hero Card -->
+        <div class="hero-card">
+          <div class="hero-card-bg"></div>
+          <div class="hero-card-content">
+            <p class="hero-card-label">AI READINESS SCORE</p>
+            <div class="hero-score-row">
+              <span class="hero-score">87</span>
+              <span class="hero-score-unit">/100</span>
+              <div class="hero-score-badge positive">▲ 4pts</div>
+            </div>
+            <p class="hero-card-desc">3 documents analysed today · 12 risks flagged</p>
+            <button class="hero-cta-btn" id="hero-analyse-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+              Analyse New Document
+            </button>
+          </div>
+          <div class="hero-chart">
+            <canvas id="mini-chart" width="120" height="70"></canvas>
+          </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stats-row">
+          <div class="stat-card" data-color="blue">
+            <div class="stat-icon">📄</div>
+            <span class="stat-val">24</span>
+            <span class="stat-lbl">Docs Analysed</span>
+          </div>
+          <div class="stat-card" data-color="green">
+            <div class="stat-icon">📈</div>
+            <span class="stat-val">68%</span>
+            <span class="stat-lbl">Positive Tone</span>
+          </div>
+          <div class="stat-card" data-color="amber">
+            <div class="stat-icon">⚠️</div>
+            <span class="stat-val">47</span>
+            <span class="stat-lbl">Risks Found</span>
+          </div>
+        </div>
+
+        <!-- Section: Recent Analyses -->
+        <div class="section-header">
+          <h3 class="section-title">Recent Analyses</h3>
+          <button class="see-all-btn" id="see-all-btn">See All</button>
+        </div>
+
+        <div class="doc-list" id="recent-docs">
+          <!-- populated by JS -->
+        </div>
+
+        <!-- Section: Sector Sentiment -->
+        <div class="section-header" style="margin-top:24px">
+          <h3 class="section-title">Sector Sentiment</h3>
+          <span class="badge-live">LIVE</span>
+        </div>
+        <div class="sector-grid" id="sector-grid">
+          <!-- populated by JS -->
+        </div>
+
+      </section>
+
+      <!-- ====== PAGE: ANALYSE ====== -->
+      <section class="page" id="page-analyse">
+
+        <div class="page-header">
+          <h2 class="page-title">Analyse Document</h2>
+          <p class="page-subtitle">Upload or paste a financial document for instant AI analysis</p>
+        </div>
+
+        <!-- Upload Zone -->
+        <div class="upload-zone" id="upload-zone">
+          <div class="upload-icon">
+            <svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="30" r="28" stroke="url(#ulg)" stroke-width="1.5" stroke-dasharray="4 3"/><path d="M30 40 L30 22 M22 30 L30 22 L38 30" stroke="url(#ulg)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="18" y="41" width="24" height="3" rx="1.5" fill="url(#ulg)"/><defs><linearGradient id="ulg" x1="0" y1="0" x2="60" y2="60" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs></svg>
+          </div>
+          <p class="upload-title">Drop your document here</p>
+          <p class="upload-sub">PDF, DOCX, TXT · Max 50 MB</p>
+          <button class="upload-btn" id="upload-btn">Browse Files</button>
+          <input type="file" id="file-input" accept=".pdf,.docx,.txt" class="hidden-input" />
+        </div>
+
+        <div class="divider-row"><span>— OR —</span></div>
+
+        <!-- Paste Text -->
+        <div class="paste-section">
+          <label class="input-label">Paste Financial Text</label>
+          <textarea id="paste-text" class="paste-textarea" placeholder="Paste annual report excerpts, news articles, press releases, or any financial text here…" rows="6"></textarea>
+        </div>
+
+        <!-- Quick Templates -->
+        <div class="section-header" style="margin-top:20px">
+          <h3 class="section-title">Quick Templates</h3>
+        </div>
+        <div class="template-chips" id="template-chips">
+          <!-- populated by JS -->
+        </div>
+
+        <!-- Analysis Options -->
+        <div class="analysis-options">
+          <p class="options-title">Analysis Tasks</p>
+          <div class="options-grid" id="options-grid">
+            <!-- populated by JS -->
+          </div>
+        </div>
+
+        <!-- Analyse Button -->
+        <button class="analyse-cta" id="run-analysis-btn">
+          <div class="analyse-cta-inner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Run AI Analysis
+          </div>
+        </button>
+
+        <!-- Results (hidden until analysis runs) -->
+        <div id="analysis-results" class="hidden">
+          <!-- populated by JS -->
+        </div>
+
+      </section>
+
+      <!-- ====== PAGE: INSIGHTS ====== -->
+      <section class="page" id="page-insights">
+
+        <div class="page-header">
+          <h2 class="page-title">Insights</h2>
+          <p class="page-subtitle">Sector trends and sentiment over time</p>
+        </div>
+
+        <!-- Sentiment Timeline -->
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <span class="chart-card-title">Market Sentiment (30 days)</span>
+            <div class="chart-legend">
+              <span class="legend-dot" style="background:#22c55e"></span><span>Positive</span>
+              <span class="legend-dot" style="background:#ef4444"></span><span>Negative</span>
+            </div>
+          </div>
+          <canvas id="sentiment-chart" width="320" height="160"></canvas>
+        </div>
+
+        <!-- Risk Heatmap -->
+        <div class="chart-card" style="margin-top:16px">
+          <div class="chart-card-header">
+            <span class="chart-card-title">Risk Category Breakdown</span>
+          </div>
+          <div class="risk-bars" id="risk-bars">
+            <!-- populated by JS -->
+          </div>
+        </div>
+
+        <!-- Top Keywords -->
+        <div class="section-header" style="margin-top:24px">
+          <h3 class="section-title">Top Signal Words</h3>
+        </div>
+        <div class="keyword-cloud" id="keyword-cloud">
+          <!-- populated by JS -->
+        </div>
+
+        <!-- Company Comparisons -->
+        <div class="section-header" style="margin-top:24px">
+          <h3 class="section-title">Company Comparison</h3>
+        </div>
+        <div class="company-compare-list" id="company-compare">
+          <!-- populated by JS -->
+        </div>
+
+      </section>
+
+      <!-- ====== PAGE: REPORTS ====== -->
+      <section class="page" id="page-reports">
+
+        <div class="page-header">
+          <h2 class="page-title">Reports</h2>
+          <p class="page-subtitle">Saved analyses and generated reports</p>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="filter-tabs" id="report-filter-tabs">
+          <button class="filter-tab active" data-filter="all">All</button>
+          <button class="filter-tab" data-filter="positive">Positive</button>
+          <button class="filter-tab" data-filter="negative">Negative</button>
+          <button class="filter-tab" data-filter="neutral">Neutral</button>
+        </div>
+
+        <div class="reports-list" id="reports-list">
+          <!-- populated by JS -->
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-nav" id="bottom-nav">
+      <button class="nav-tab active" data-page="dashboard" aria-label="Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="nav-tab" data-page="analyse" aria-label="Analyse">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <span>Analyse</span>
+      </button>
+      <button class="nav-tab centre-tab" data-page="analyse" aria-label="Quick Analyse" id="fab-btn">
+        <div class="fab-inner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+      </button>
+      <button class="nav-tab" data-page="insights" aria-label="Insights">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span>Insights</span>
+      </button>
+      <button class="nav-tab" data-page="reports" aria-label="Reports">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span>Reports</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- ===== USER DROPDOWN ===== -->
+  <div class="user-dropdown hidden" id="user-dropdown">
+    <div class="user-dropdown-header">
+      <div class="user-dropdown-avatar" id="ud-avatar">MG</div>
+      <div class="user-dropdown-info">
+        <p class="user-dropdown-name" id="ud-name">Mohit Gupta</p>
+        <p class="user-dropdown-email" id="ud-email">mohit@example.com</p>
+      </div>
+    </div>
+    <button class="user-dropdown-item" id="ud-about-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      About FinAI
+    </button>
+    <div class="user-dropdown-divider"></div>
+    <button class="user-dropdown-item logout" id="ud-logout-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </button>
+  </div>
+
+  <!-- ===== MODALS ===== -->
+  <!-- Document Detail Modal -->
+  <div class="modal-overlay hidden" id="doc-modal-overlay">
+    <div class="modal-sheet" id="doc-modal">
+      <div class="modal-handle"></div>
+      <div class="modal-content" id="doc-modal-content">
+        <!-- populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Analysis Running Modal -->
+  <div class="modal-overlay hidden" id="analysis-modal-overlay">
+    <div class="analysis-running-modal">
+      <div class="analysis-animation">
+        <div class="analysis-rings">
+          <div class="ring r1"></div>
+          <div class="ring r2"></div>
+          <div class="ring r3"></div>
+        </div>
+        <div class="analysis-icon">🤖</div>
+      </div>
+      <h3 class="analysis-running-title">FinBERT is Reading…</h3>
+      <p class="analysis-running-sub">NLP Transformer processing document</p>
+      <div class="analysis-steps" id="analysis-steps">
+        <!-- populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast hidden" id="toast">
+    <div class="toast-icon" id="toast-icon">✓</div>
+    <div class="toast-text" id="toast-text">Done!</div>
+  </div>
+
+  <!-- Notification Dropdown -->
+  <div class="notif-dropdown hidden" id="notif-dropdown">
+    <div class="notif-dropdown-header">
+      <span class="notif-dropdown-title">Notifications</span>
+      <button class="notif-clear-btn" id="notif-clear">Clear all</button>
+    </div>
+    <div class="notif-item unread">
+      <div class="notif-dot-left"></div>
+      <div class="notif-content">
+        <p class="notif-text">Reliance AR 2024 analysis ready</p>
+        <p class="notif-time">2 minutes ago</p>
+      </div>
+      <span class="notif-badge positive">+78</span>
+    </div>
+    <div class="notif-item unread">
+      <div class="notif-dot-left"></div>
+      <div class="notif-content">
+        <p class="notif-text">3 new risk factors detected in HDFC Q3</p>
+        <p class="notif-time">18 minutes ago</p>
+      </div>
+      <span class="notif-badge negative">Risk</span>
+    </div>
+    <div class="notif-item">
+      <div class="notif-dot-left" style="opacity:0"></div>
+      <div class="notif-content">
+        <p class="notif-text">FinBERT model updated to v2.1</p>
+        <p class="notif-time">1 hour ago</p>
+      </div>
+      <span class="notif-badge neutral">Info</span>
+    </div>
+  </div>
+
+  <!-- About / Tech Stack Modal -->
+  <div class="modal-overlay hidden" id="about-modal-overlay">
+    <div class="modal-sheet" id="about-modal">
+      <div class="modal-handle"></div>
+      <div class="modal-content">
+        <div style="text-align:center;margin-bottom:24px">
+          <div style="width:56px;height:56px;margin:0 auto 12px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px">🤖</div>
+          <h2 style="font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;margin-bottom:4px">Powered by AI</h2>
+          <p style="font-size:13px;color:var(--text-secondary)">The technology stack behind FinAI</p>
+        </div>
+
+        <div class="about-tech-card">
+          <div class="about-tech-icon" style="background:rgba(59,130,246,0.15);color:#3b82f6">🧠</div>
+          <div class="about-tech-info">
+            <p class="about-tech-name">FinBERT</p>
+            <p class="about-tech-desc">A BERT Transformer pre-trained on financial text (annual reports, SEC filings, earnings calls). Understands domain jargon like EBITDA, headwinds, and forward-looking statements.</p>
+          </div>
+        </div>
+
+        <div class="about-tech-card">
+          <div class="about-tech-icon" style="background:rgba(139,92,246,0.15);color:#8b5cf6">🔍</div>
+          <div class="about-tech-info">
+            <p class="about-tech-name">LIME / SHAP (XAI)</p>
+            <p class="about-tech-desc">Explainable AI libraries that highlight which words and phrases drove the model's decision, opening the "black box" for human verification and trust.</p>
+          </div>
+        </div>
+
+        <div class="about-tech-card">
+          <div class="about-tech-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b">📊</div>
+          <div class="about-tech-info">
+            <p class="about-tech-name">Sentiment Analysis</p>
+            <p class="about-tech-desc">Classifies financial text as Positive, Neutral, or Negative with a confidence score. Goes beyond word counting to understand context and tone.</p>
+          </div>
+        </div>
+
+        <div class="about-tech-card">
+          <div class="about-tech-icon" style="background:rgba(34,197,94,0.15);color:#22c55e">📝</div>
+          <div class="about-tech-info">
+            <p class="about-tech-name">NLP Summarisation</p>
+            <p class="about-tech-desc">Extracts the most important key points from long financial documents, saving analysts hours of reading time.</p>
+          </div>
+        </div>
+
+        <div class="about-tech-card">
+          <div class="about-tech-icon" style="background:rgba(239,68,68,0.15);color:#ef4444">⚠️</div>
+          <div class="about-tech-info">
+            <p class="about-tech-name">Risk NER</p>
+            <p class="about-tech-desc">Named Entity Recognition trained to identify and classify financial risk disclosures — market, regulatory, operational, and liquidity risks.</p>
+          </div>
+        </div>
+
+        <div style="margin-top:20px;padding:14px;background:var(--bg-card);border-radius:var(--radius-md);border:1px solid var(--border-color)">
+          <p style="font-size:11px;color:var(--text-secondary);line-height:1.7">💡 <strong style="color:var(--text-primary)">Pro tip:</strong> Paste the "Risk Factors" section from an annual report for the most actionable insights. This section contains the company's own legally-required risk disclosures.</p>
+        </div>
+
+        <button onclick="document.getElementById('about-modal-overlay').classList.add('hidden')" style="width:100%;margin-top:20px;margin-bottom:8px;padding:14px;background:var(--gradient-main);border-radius:var(--radius-md);font-size:14px;font-weight:700;color:white;box-shadow:0 4px 20px rgba(59,130,246,0.35)">
+          Got it!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/market.js"></script>
+  <script src="js/nlp.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
