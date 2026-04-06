@@ -84,17 +84,16 @@
       btn.classList.add('loading');
       btn.innerHTML = '<span class="btn-spinner"></span>Signing in…';
 
-      setTimeout(() => {
-        const res = AUTH.login(email, pw);
+      AUTH.login(email, pw).then(res => {
         btn.classList.remove('loading');
         btn.textContent = 'Sign In';
         if (res.ok) {
           launchApp();
         } else {
           errEl.textContent = '⚠ ' + res.msg;
-          $(email.includes('@') ? 'login-email' : 'login-password').classList.add('error');
+          $('login-email').classList.add('error');
         }
-      }, 600);
+      });
     });
 
     // Signup form
@@ -123,8 +122,7 @@
       btn.classList.add('loading');
       btn.innerHTML = '<span class="btn-spinner"></span>Creating account…';
 
-      setTimeout(() => {
-        const res = AUTH.signup(name, email, pw);
+      AUTH.signup(name, email, pw).then(res => {
         btn.classList.remove('loading');
         btn.textContent = 'Create Account';
         if (res.ok) {
@@ -133,25 +131,21 @@
           errEl.textContent = '⚠ ' + res.msg;
           $('signup-email').classList.add('error');
         }
-      }, 700);
+      });
     });
 
-    // Decide: show auth or go straight to splash
-    if (AUTH.isLoggedIn()) {
-      authScreen.classList.add('hidden');
-      initSplash();
-    } else {
-      authScreen.classList.remove('hidden');
-    }
+    // Auth screen is shown/hidden by waitForFirebase in boot.
+    // initAuth() is only called when user is NOT logged in.
   }
 
   function launchApp() {
     const authScreen = $('auth-screen');
+    if (!authScreen) { initSplash(); return; }
     authScreen.classList.add('exit');
     setTimeout(() => {
       authScreen.classList.add('hidden');
       authScreen.classList.remove('exit');
-      initSplash();
+      DB.seed().then(() => initSplash());
     }, 420);
   }
 
@@ -184,8 +178,27 @@
   /* ══════════════════════════════════════════════════════════
      APP INIT
   ══════════════════════════════════════════════════════════ */
+
+  // Live Firestore data holders
+  let _liveAnalyses = [];
+  let _liveCompanies = [];
+
   function initApp() {
     updateGreeting();
+
+    // ── Start real-time Firestore listeners ────────────────
+    DB.listenToAnalyses((analyses) => {
+      _liveAnalyses = analyses;
+      renderDocList(_liveAnalyses.slice(0, 3));
+      if (state.currentPage === 'reports') renderReportsList(state.reportFilter);
+    });
+
+    DB.listenToCompanies((companies) => {
+      _liveCompanies = companies;
+      renderCompanyComparison(_liveCompanies);
+      animateCompanyBars();
+    });
+
     renderDashboard();
     renderAnalysePage();
     renderInsightsPage();
@@ -305,40 +318,14 @@
     }
   }
 
-  /* ── Live Insights & Reports (updates every 10s) ───────── */
+  /* ── Live Insights & Reports (updates driven by Firestore) ─ */
   function updateLiveInsightsAndReports(mktState) {
-    if (state.currentPage !== 'insights' && state.currentPage !== 'reports') return;
-
-    // Shift company scores
-    DATA.companies.forEach(c => {
-      c.score = Math.max(10, Math.min(99, c.score + Math.floor((Math.random() - 0.5) * 6)));
-      if (c.score >= 60) c.cls = 'positive';
-      else if (c.score <= 40) c.cls = 'negative';
-      else c.cls = 'neutral';
-    });
-
-    // Shift doc scores
-    DATA.recentDocs.forEach(d => {
-      d.sentimentScore = Math.max(10, Math.min(99, d.sentimentScore + Math.floor((Math.random() - 0.5) * 4)));
-    });
-
-    // Re-render
-    if (state.currentPage === 'insights') {
-      const container = $('company-compare');
-      if (container) {
-        DATA.companies.forEach((c, i) => {
-          const scoreEl = container.querySelectorAll('.company-sentiment-score')[i];
-          const fillEl = container.querySelectorAll('.company-progress-fill')[i];
-          if (scoreEl && fillEl) {
-            scoreEl.textContent = c.score;
-            scoreEl.className = 'company-sentiment-score ' + c.cls;
-            fillEl.style.width = c.score + '%';
-          }
-        });
-      }
-    } else if (state.currentPage === 'reports') {
+    // Market-driven sector updates still animate locally
+    if (state.currentPage === 'reports') {
       renderReportsList(state.reportFilter);
     }
+    // Company scores now come from Firestore via listenToCompanies,
+    // not from local mutation — no fake data needed here.
   }
 
   function updateMarketStatus(state) {
@@ -554,15 +541,19 @@
      DASHBOARD
   ══════════════════════════════════════════════════════════ */
   function renderDashboard() {
-    renderDocList();
+    renderDocList([]);   // starts empty; Firestore listener will populate
     renderSectorGrid();
   }
 
-  function renderDocList() {
+  function renderDocList(docs) {
     const container = $('recent-docs');
-    container.innerHTML = DATA.recentDocs.map(doc => `
+    if (!docs || docs.length === 0) {
+      container.innerHTML = `<div style="text-align:center;padding:32px 16px;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:8px">📂</div><p style="font-size:13px">No analyses yet. Run your first analysis!</p></div>`;
+      return;
+    }
+    container.innerHTML = docs.map(doc => `
       <div class="doc-card ${doc.sentiment}" data-id="${doc.id}" role="button" tabindex="0" aria-label="${doc.name}">
-        <div class="doc-icon ${doc.sentiment}">${doc.icon}</div>
+        <div class="doc-icon ${doc.sentiment}">${doc.icon || '📄'}</div>
         <div class="doc-info">
           <p class="doc-name">${doc.name}</p>
           <div class="doc-meta">
@@ -581,7 +572,7 @@
     // Bind clicks
     container.querySelectorAll('.doc-card').forEach(card => {
       card.addEventListener('click', () => {
-        const doc = DATA.recentDocs.find(d => d.id === +card.dataset.id);
+        const doc = docs.find(d => d.id === card.dataset.id);
         if (doc) openDocModal(doc);
       });
     });
@@ -703,6 +694,7 @@
     }
     // Run real NLP analysis
     state.lastAnalysisResult = NLP.analyze(text);
+    state.lastAnalysisText   = text;
     if (!state.lastAnalysisResult) {
       showToast('⚠️', 'Text too short for analysis', '#f59e0b');
       return;
@@ -737,9 +729,17 @@
         current++;
       } else {
         clearInterval(stepInterval);
-        setTimeout(() => {
+        setTimeout(async () => {
           overlay.classList.add('hidden');
           state.analysisRunning = false;
+          // Save result to Firestore
+          if (window.DB && state.lastAnalysisText) {
+            try {
+              await DB.saveAnalysis(state.lastAnalysisResult, state.lastAnalysisText);
+            } catch(e) {
+              console.warn('[FinAI] Could not save to Firestore:', e.message);
+            }
+          }
           showAnalysisResults();
         }, 600);
       }
@@ -930,9 +930,11 @@
     }).join('');
   }
 
-  function renderCompanyComparison() {
+  function renderCompanyComparison(companies) {
     const container = $('company-compare');
-    container.innerHTML = DATA.companies.map(c => `
+    const src = (companies && companies.length > 0) ? companies : _liveCompanies;
+    if (!src || src.length === 0) return;
+    container.innerHTML = src.map(c => `
       <div class="company-compare-card">
         <div class="company-compare-top">
           <div>
@@ -945,7 +947,7 @@
           </div>
         </div>
         <div class="company-progress-track">
-          <div class="company-progress-fill" data-fill="${c.score}" style="width:0%;background:${c.barColor}"></div>
+          <div class="company-progress-fill" data-fill="${c.score}" style="width:0%;background:${c.barColor || '#3b82f6'}"></div>
         </div>
       </div>
     `).join('');
@@ -979,9 +981,10 @@
 
   function renderReportsList(filter) {
     const container = $('reports-list');
+    const src = _liveAnalyses.length > 0 ? _liveAnalyses : [];
     const docs = filter === 'all'
-      ? DATA.recentDocs
-      : DATA.recentDocs.filter(d => d.sentiment === filter);
+      ? src
+      : src.filter(d => d.sentiment === filter);
 
     if (docs.length === 0) {
       container.innerHTML = `
@@ -1005,10 +1008,10 @@
             <p class="report-score-label">AI Score</p>
           </div>
         </div>
-        <p class="report-summary">${doc.summary}</p>
+        <p class="report-summary">${doc.summary || ''}</p>
         <div class="report-footer">
           <div class="report-tags">
-            ${doc.tags.map(t => `<span class="report-tag">${t}</span>`).join('')}
+            ${(doc.tags || []).map(t => `<span class="report-tag">${t}</span>`).join('')}
           </div>
           <span class="report-date">${doc.date}</span>
         </div>
@@ -1017,7 +1020,7 @@
 
     container.querySelectorAll('.report-card').forEach(card => {
       card.addEventListener('click', () => {
-        const doc = DATA.recentDocs.find(d => d.id === +card.dataset.id);
+        const doc = docs.find(d => d.id === card.dataset.id);
         if (doc) openDocModal(doc);
       });
     });
@@ -1174,7 +1177,28 @@
   /* ── Boot ───────────────────────────────────────────────── */
   document.addEventListener('DOMContentLoaded', () => {
     initTheme();
-    initAuth();
+
+    // Wait for Firebase to resolve auth state before showing auth screen
+    // AUTH.onReady is called once onAuthStateChanged fires
+    function waitForFirebase() {
+      if (window.AUTH && window.AUTH.onReady && window.DB) {
+        AUTH.onReady((user) => {
+          if (user) {
+            // Already logged in — seed DB then go straight to app
+            DB.seed().then(() => launchApp());
+          } else {
+            // Not logged in — show auth screen
+            const authScreen = $('auth-screen');
+            if (authScreen) authScreen.classList.remove('hidden');
+            initAuth();
+          }
+        });
+      } else {
+        // Firebase modules haven't loaded yet — retry in 100ms
+        setTimeout(waitForFirebase, 100);
+      }
+    }
+    waitForFirebase();
   });
 
 })();

@@ -1,73 +1,118 @@
 /* ============================================================
-   auth.js — FinAI Authentication Module
+   auth.js — FinAI Authentication Module (Firebase Auth)
    ============================================================ */
 
-(function () {
-  'use strict';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  updateProfile,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-  /* ── Storage Keys ─────────────────────────────────────── */
-  const USERS_KEY   = 'finai_users';
-  const SESSION_KEY = 'finai_session';
+import {
+  doc,
+  setDoc,
+  getDoc,
+  serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  /* ── Helpers ──────────────────────────────────────────── */
-  function getUsers()        { return JSON.parse(localStorage.getItem(USERS_KEY) || '[]'); }
-  function saveUsers(users)  { localStorage.setItem(USERS_KEY, JSON.stringify(users)); }
-  function getSession()      { return JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); }
-  function saveSession(user) { localStorage.setItem(SESSION_KEY, JSON.stringify(user)); }
-  function clearSession()    { localStorage.removeItem(SESSION_KEY); }
+/* ── Internal state ─────────────────────────────────────── */
+let _currentUser = null;   // { id, fullName, email, avatar }
+let _onReadyCallbacks = [];
+let _isReady = false;
 
-  function hashSimple(str) {
-    // Lightweight deterministic hash (not cryptographic – demo only)
-    let h = 0;
-    for (let i = 0; i < str.length; i++) {
-      h = Math.imul(31, h) + str.charCodeAt(i) | 0;
+/* ── Wait for Firebase to resolve auth state on page load ── */
+onAuthStateChanged(window.FIREBASE_AUTH, async (firebaseUser) => {
+  if (firebaseUser) {
+    // Load the profile from Firestore
+    const snap = await getDoc(doc(window.FIREBASE_DB, 'users', firebaseUser.uid));
+    if (snap.exists()) {
+      _currentUser = snap.data();
+    } else {
+      // Fallback: build from Firebase user object
+      _currentUser = {
+        id:       firebaseUser.uid,
+        fullName: firebaseUser.displayName || 'User',
+        email:    firebaseUser.email,
+        avatar:   (firebaseUser.displayName || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
+      };
     }
-    return h.toString(16);
+  } else {
+    _currentUser = null;
   }
 
-  /* ── Public API ───────────────────────────────────────── */
-  window.AUTH = {
+  _isReady = true;
+  _onReadyCallbacks.forEach(cb => cb(_currentUser));
+  _onReadyCallbacks = [];
+});
 
-    isLoggedIn() {
-      return !!getSession();
-    },
+/* ── Public API ───────────────────────────────────────────── */
+window.AUTH = {
 
-    getUser() {
-      return getSession();
-    },
+  /** Call cb(user) once auth state is known. user=null if logged out. */
+  onReady(cb) {
+    if (_isReady) { cb(_currentUser); }
+    else          { _onReadyCallbacks.push(cb); }
+  },
 
-    signup(fullName, email, password) {
-      const users = getUsers();
-      if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
-        return { ok: false, msg: 'An account with this email already exists.' };
-      }
-      const user = {
-        id: Date.now(),
-        fullName: fullName.trim(),
-        email: email.toLowerCase().trim(),
-        passwordHash: hashSimple(password),
-        createdAt: new Date().toISOString(),
-        avatar: fullName.trim().split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
+  isLoggedIn() { return !!_currentUser; },
+  getUser()    { return _currentUser; },
+
+  async signup(fullName, email, password) {
+    try {
+      const cred = await createUserWithEmailAndPassword(window.FIREBASE_AUTH, email, password);
+      const user = cred.user;
+
+      const avatar = fullName.trim().split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+      // Update Firebase display name
+      await updateProfile(user, { displayName: fullName.trim() });
+
+      // Save user profile to Firestore
+      const profile = {
+        id:        user.uid,
+        fullName:  fullName.trim(),
+        email:     email.toLowerCase().trim(),
+        avatar,
+        createdAt: serverTimestamp(),
       };
-      users.push(user);
-      saveUsers(users);
-      saveSession({ id: user.id, fullName: user.fullName, email: user.email, avatar: user.avatar });
-      return { ok: true };
-    },
+      await setDoc(doc(window.FIREBASE_DB, 'users', user.uid), profile);
 
-    login(email, password) {
-      const users = getUsers();
-      const user  = users.find(u => u.email.toLowerCase() === email.toLowerCase().trim());
-      if (!user) return { ok: false, msg: 'No account found with this email.' };
-      if (user.passwordHash !== hashSimple(password)) return { ok: false, msg: 'Incorrect password.' };
-      saveSession({ id: user.id, fullName: user.fullName, email: user.email, avatar: user.avatar });
+      _currentUser = { id: user.uid, fullName: fullName.trim(), email: email.toLowerCase().trim(), avatar };
       return { ok: true };
-    },
+    } catch (err) {
+      return { ok: false, msg: _friendlyError(err.code) };
+    }
+  },
 
-    logout() {
-      clearSession();
-      location.reload();
-    },
+  async login(email, password) {
+    try {
+      await signInWithEmailAndPassword(window.FIREBASE_AUTH, email, password);
+      // onAuthStateChanged will update _currentUser automatically
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, msg: _friendlyError(err.code) };
+    }
+  },
+
+  async logout() {
+    await signOut(window.FIREBASE_AUTH);
+    _currentUser = null;
+    location.reload();
+  },
+};
+
+function _friendlyError(code) {
+  const map = {
+    'auth/email-already-in-use':    'An account with this email already exists.',
+    'auth/user-not-found':          'No account found with this email.',
+    'auth/wrong-password':          'Incorrect password.',
+    'auth/invalid-email':           'Please enter a valid email address.',
+    'auth/weak-password':           'Password must be at least 6 characters.',
+    'auth/too-many-requests':       'Too many attempts. Please try again later.',
+    'auth/network-request-failed':  'Network error. Check your internet connection.',
+    'auth/invalid-credential':      'Invalid email or password.',
   };
-
-})();
+  return map[code] || 'Something went wrong. Please try again.';
+}
