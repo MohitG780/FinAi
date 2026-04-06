@@ -135,15 +135,16 @@ window.AUTH = {
 /* ── Error code → user-friendly message ──────────────────── */
 function _friendlyError(code) {
   const map = {
-    'auth/email-already-in-use':   'An account with this email already exists.',
-    'auth/user-not-found':         'No account found with this email.',
-    'auth/wrong-password':         'Incorrect password. Please try again.',
-    'auth/invalid-email':          'Please enter a valid email address.',
-    'auth/weak-password':          'Password must be at least 6 characters.',
-    'auth/too-many-requests':      'Too many attempts. Please try again later.',
-    'auth/network-request-failed': 'Network error. Check your internet connection.',
-    'auth/invalid-credential':     'Invalid email or password.',
-    'auth/operation-not-allowed':  'Email/password login is not enabled in Firebase Console.',
+    'auth/email-already-in-use':    'An account with this email already exists.',
+    'auth/user-not-found':          'No account found with this email.',
+    'auth/wrong-password':          'Incorrect password. Please try again.',
+    'auth/invalid-email':           'Please enter a valid email address.',
+    'auth/weak-password':           'Password must be at least 6 characters.',
+    'auth/too-many-requests':       'Too many attempts. Please try again later.',
+    'auth/network-request-failed':  'Network error. Check your internet connection.',
+    'auth/invalid-credential':      'Invalid email or password.',
+    'auth/operation-not-allowed':   'Email/password sign-in is not enabled. Enable it in Firebase Console → Authentication → Sign-in method.',
+    'auth/configuration-not-found': 'Firebase Auth not configured. Please enable Email/Password in Firebase Console → Authentication → Sign-in method.',
   };
   return map[code] || `Authentication error (${code}). Please try again.`;
 }
