@@ -1,0 +1,9 @@
+# Firebase config with real keys — never commit this
+js/firebase-config.js
+
+# node_modules (firebase npm package)
+node_modules/
+package-lock.json
+
+# OS files
+.DS_Store
