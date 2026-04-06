@@ -721,7 +721,7 @@ body,
   display: flex;
   align-items: center;
 }
-.auth-input-wrap svg {
+.auth-input-wrap > svg {
   position: absolute;
   left: 13px;
   width: 16px; height: 16px;
