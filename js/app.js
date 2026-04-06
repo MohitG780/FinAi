@@ -199,6 +199,23 @@
       animateCompanyBars();
     });
 
+    // ── Re-render market-driven UI on every data refresh ──
+    // data.js fires 'data-refreshed' after each market-data-updated event
+    window.addEventListener('data-refreshed', () => {
+      renderSectorGrid();
+      // Use Firestore companies if available, else fall back to market-derived
+      if (_liveCompanies.length === 0) {
+        renderCompanyComparison(DATA.companies);
+        animateCompanyBars();
+      }
+      renderRiskBars();
+      animateRiskBars();
+      renderKeywordCloud();
+      if (state.currentPage === 'insights') {
+        Charts.drawSentimentChart('sentiment-chart', DATA.sentimentTimeline);
+      }
+    });
+
     renderDashboard();
     renderAnalysePage();
     renderInsightsPage();
@@ -207,13 +224,9 @@
     bindAnalysePage();
     bindReportsPage();
     Charts.drawMiniChart('mini-chart');
-    setTimeout(() => Charts.drawSentimentChart('sentiment-chart', DATA.sentimentTimeline), 200);
-    animateSectorBars();
-    animateCompanyBars();
-    animateRiskBars();
     setTimeout(animateStats, 400);
 
-    // Start live market data
+    // Start live market data (first market event fires data-refreshed ~ 1s)
     initMarketData();
   }
 

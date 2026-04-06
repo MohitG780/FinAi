@@ -1,32 +1,21 @@
 /* ============================================================
    firebase-config.js — Firebase SDK Initialization for FinAI
-   ============================================================
-   SETUP INSTRUCTIONS:
-   1. Go to https://console.firebase.google.com/
-   2. Click "Add Project" → name it "FinAI" → Continue
-   3. Disable Google Analytics (optional) → Create Project
-   4. Click "</>  Web" to register a web app → name it "FinAI"
-   5. Copy the firebaseConfig object values below
-   6. In Firebase Console:
-      - Go to Authentication → Get Started → Enable "Email/Password"
-      - Go to Firestore Database → Create database → Start in test mode
+   Uses CDN ESM imports (no bundler needed for static HTML site)
    ============================================================ */
 
-// ── PASTE YOUR FIREBASE CONFIG HERE ─────────────────────────
-const firebaseConfig = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId:             "YOUR_APP_ID"
-};
-// ─────────────────────────────────────────────────────────────
+import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth }        from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore }   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Initialize Firebase
-import { initializeApp }          from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth }                from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore }           from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const firebaseConfig = {
+  apiKey:            "AIzaSyC2wecKX5MKpA4-EySQENLkRqKFC91cxCQ",
+  authDomain:        "finai-33a38.firebaseapp.com",
+  projectId:         "finai-33a38",
+  storageBucket:     "finai-33a38.firebasestorage.app",
+  messagingSenderId: "83882939879",
+  appId:             "1:83882939879:web:0ff7786fddafdcf3635942",
+  measurementId:     "G-HMSKY8JM5F"
+};
 
 const _app = initializeApp(firebaseConfig);
 
