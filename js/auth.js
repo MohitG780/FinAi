@@ -25,6 +25,20 @@ let _currentUser       = null;
 let _onReadyCallbacks  = [];
 let _isReady           = false;
 
+/* ── Gravatar Helper ────────────────────────────────────── */
+async function getGravatarUrl(email) {
+  if (!email) return 'U';
+  try {
+    const msgUint8 = new TextEncoder().encode(email.trim().toLowerCase());
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return `https://www.gravatar.com/avatar/${hashHex}?d=identicon`;
+  } catch (e) {
+    return 'U';
+  }
+}
+
 /* ── Listen to Firebase auth state changes ──────────────── */
 onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
   if (firebaseUser) {
@@ -36,8 +50,7 @@ onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
             id:       firebaseUser.uid,
             fullName: firebaseUser.displayName || 'User',
             email:    firebaseUser.email,
-            avatar:   (firebaseUser.displayName || 'U')
-                        .split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
+            avatar:   await getGravatarUrl(firebaseUser.email),
           };
     } catch (e) {
       console.warn('[AUTH] Could not load profile from Firestore:', e.message);
@@ -45,7 +58,7 @@ onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
         id:       firebaseUser.uid,
         fullName: firebaseUser.displayName || 'User',
         email:    firebaseUser.email,
-        avatar:   'U',
+        avatar:   await getGravatarUrl(firebaseUser.email),
       };
     }
   } else {
@@ -76,7 +89,7 @@ window.AUTH = {
     try {
       const cred   = await createUserWithEmailAndPassword(firebaseAuth, email, password);
       const user   = cred.user;
-      const avatar = fullName.trim().split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+      const avatar = await getGravatarUrl(email);
 
       await updateProfile(user, { displayName: fullName.trim() });
 
@@ -110,9 +123,9 @@ window.AUTH = {
         _currentUser = snap.exists()
           ? snap.data()
           : { id: user.uid, fullName: user.displayName || 'User', email: user.email,
-              avatar: (user.displayName || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) };
+              avatar: await getGravatarUrl(user.email) };
       } catch {
-        _currentUser = { id: user.uid, fullName: user.displayName || 'User', email: user.email, avatar: 'U' };
+        _currentUser = { id: user.uid, fullName: user.displayName || 'User', email: user.email, avatar: await getGravatarUrl(user.email) };
       }
 
       return { ok: true };

@@ -489,8 +489,22 @@
     // Populate user dropdown with real data
     const user = AUTH.getUser();
     if (user) {
-      $('avatar-chip').textContent = user.avatar;
-      $('ud-avatar').textContent   = user.avatar;
+      // Update avatar UI (image or initials fallback)
+      const renderAvatar = (elId) => {
+        const el = $(elId);
+        if (!el) return;
+        if (user.avatar && user.avatar.startsWith('http')) {
+          el.textContent = '';
+          el.style.backgroundImage = `url(${user.avatar})`;
+          el.style.backgroundSize = 'cover';
+          el.style.backgroundPosition = 'center';
+        } else {
+          el.style.backgroundImage = 'none';
+          el.textContent = user.avatar;
+        }
+      };
+      renderAvatar('avatar-chip');
+      renderAvatar('ud-avatar');
       $('ud-name').textContent     = user.fullName;
       $('ud-email').textContent    = user.email;
     }
