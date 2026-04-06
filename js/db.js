@@ -3,6 +3,8 @@
    Real-time reads/writes for analyses, documents, and sectors.
    ============================================================ */
 
+import { firebaseDb } from "./firebase-config.js";
+
 import {
   collection,
   doc,
@@ -59,17 +61,15 @@ const SEED_COMPANIES = [
 
 /* ─── Seed the database on first launch ─────────────────── */
 async function seedIfEmpty() {
-  const db = window.FIREBASE_DB;
-
   // Check if already seeded
-  const snap = await getDocs(collection(db, 'analyses'));
+  const snap = await getDocs(collection(firebaseDb, 'analyses'));
   if (!snap.empty) return; // Already has data, skip seeding
 
   console.log('[FinAI] Seeding Firestore with initial data…');
 
   // Seed analyses
   for (const docData of SEED_DOCS) {
-    await addDoc(collection(db, 'analyses'), {
+    await addDoc(collection(firebaseDb, 'analyses'), {
       ...docData,
       createdAt: serverTimestamp(),
       isSeeded: true,
@@ -78,7 +78,7 @@ async function seedIfEmpty() {
 
   // Seed companies
   for (const company of SEED_COMPANIES) {
-    await setDoc(doc(db, 'companies', company.ticker), {
+    await setDoc(doc(firebaseDb, 'companies', company.ticker), {
       ...company,
       updatedAt: serverTimestamp(),
     });
@@ -89,8 +89,7 @@ async function seedIfEmpty() {
 
 /* ─── Real-time listener: analyses collection ────────────── */
 function listenToAnalyses(callback) {
-  const db = window.FIREBASE_DB;
-  const q  = query(collection(db, 'analyses'), orderBy('createdAt', 'desc'), limit(20));
+  const q = query(collection(firebaseDb, 'analyses'), orderBy('createdAt', 'desc'), limit(20));
   return onSnapshot(q, (snapshot) => {
     const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     callback(docs);
@@ -99,8 +98,7 @@ function listenToAnalyses(callback) {
 
 /* ─── Real-time listener: companies collection ───────────── */
 function listenToCompanies(callback) {
-  const db = window.FIREBASE_DB;
-  return onSnapshot(collection(db, 'companies'), (snapshot) => {
+  return onSnapshot(collection(firebaseDb, 'companies'), (snapshot) => {
     const companies = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     callback(companies);
   });
@@ -108,9 +106,8 @@ function listenToCompanies(callback) {
 
 /* ─── Save a new analysis result to Firestore ────────────── */
 async function saveAnalysis(analysisResult, inputText) {
-  const db   = window.FIREBASE_DB;
   const user = window.AUTH.getUser();
-  await addDoc(collection(db, 'analyses'), {
+  await addDoc(collection(firebaseDb, 'analyses'), {
     name:           'Pasted Financial Text',
     type:           'User Analysis',
     sector:         'General',

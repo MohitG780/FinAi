@@ -1,6 +1,9 @@
 /* ============================================================
-   auth.js — FinAI Authentication Module (Firebase Auth)
+   auth.js — FinAI Authentication (Firebase Auth)
+   Imports auth/db instances directly from firebase-config.js
    ============================================================ */
+
+import { firebaseAuth, firebaseDb } from "./firebase-config.js";
 
 import {
   createUserWithEmailAndPassword,
@@ -18,24 +21,31 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ── Internal state ─────────────────────────────────────── */
-let _currentUser = null;   // { id, fullName, email, avatar }
-let _onReadyCallbacks = [];
-let _isReady = false;
+let _currentUser       = null;
+let _onReadyCallbacks  = [];
+let _isReady           = false;
 
-/* ── Wait for Firebase to resolve auth state on page load ── */
-onAuthStateChanged(window.FIREBASE_AUTH, async (firebaseUser) => {
+/* ── Listen to Firebase auth state changes ──────────────── */
+onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
   if (firebaseUser) {
-    // Load the profile from Firestore
-    const snap = await getDoc(doc(window.FIREBASE_DB, 'users', firebaseUser.uid));
-    if (snap.exists()) {
-      _currentUser = snap.data();
-    } else {
-      // Fallback: build from Firebase user object
+    try {
+      const snap = await getDoc(doc(firebaseDb, 'users', firebaseUser.uid));
+      _currentUser = snap.exists()
+        ? snap.data()
+        : {
+            id:       firebaseUser.uid,
+            fullName: firebaseUser.displayName || 'User',
+            email:    firebaseUser.email,
+            avatar:   (firebaseUser.displayName || 'U')
+                        .split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
+          };
+    } catch (e) {
+      console.warn('[AUTH] Could not load profile from Firestore:', e.message);
       _currentUser = {
         id:       firebaseUser.uid,
         fullName: firebaseUser.displayName || 'User',
         email:    firebaseUser.email,
-        avatar:   (firebaseUser.displayName || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
+        avatar:   'U',
       };
     }
   } else {
@@ -47,29 +57,29 @@ onAuthStateChanged(window.FIREBASE_AUTH, async (firebaseUser) => {
   _onReadyCallbacks = [];
 });
 
-/* ── Public API ───────────────────────────────────────────── */
+/* ── Public API ──────────────────────────────────────────── */
 window.AUTH = {
 
-  /** Call cb(user) once auth state is known. user=null if logged out. */
+  /** Register a callback that fires once Firebase auth state is known.
+   *  user = null  →  not logged in
+   *  user = {...} →  logged in */
   onReady(cb) {
-    if (_isReady) { cb(_currentUser); }
-    else          { _onReadyCallbacks.push(cb); }
+    if (_isReady) cb(_currentUser);
+    else          _onReadyCallbacks.push(cb);
   },
 
   isLoggedIn() { return !!_currentUser; },
-  getUser()    { return _currentUser; },
+  getUser()    { return _currentUser;   },
 
+  /* ── Sign Up ──────────────────────────────────────────── */
   async signup(fullName, email, password) {
     try {
-      const cred = await createUserWithEmailAndPassword(window.FIREBASE_AUTH, email, password);
-      const user = cred.user;
-
+      const cred   = await createUserWithEmailAndPassword(firebaseAuth, email, password);
+      const user   = cred.user;
       const avatar = fullName.trim().split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
-      // Update Firebase display name
       await updateProfile(user, { displayName: fullName.trim() });
 
-      // Save user profile to Firestore
       const profile = {
         id:        user.uid,
         fullName:  fullName.trim(),
@@ -77,42 +87,65 @@ window.AUTH = {
         avatar,
         createdAt: serverTimestamp(),
       };
-      await setDoc(doc(window.FIREBASE_DB, 'users', user.uid), profile);
+      await setDoc(doc(firebaseDb, 'users', user.uid), profile);
 
+      // Set immediately so launchApp() can read it
       _currentUser = { id: user.uid, fullName: fullName.trim(), email: email.toLowerCase().trim(), avatar };
       return { ok: true };
     } catch (err) {
+      console.error('[AUTH] signup error:', err);
       return { ok: false, msg: _friendlyError(err.code) };
     }
   },
 
+  /* ── Sign In ──────────────────────────────────────────── */
   async login(email, password) {
     try {
-      await signInWithEmailAndPassword(window.FIREBASE_AUTH, email, password);
-      // onAuthStateChanged will update _currentUser automatically
+      const cred = await signInWithEmailAndPassword(firebaseAuth, email, password);
+      const user = cred.user;
+
+      // Load profile immediately so app has user data right away
+      try {
+        const snap = await getDoc(doc(firebaseDb, 'users', user.uid));
+        _currentUser = snap.exists()
+          ? snap.data()
+          : { id: user.uid, fullName: user.displayName || 'User', email: user.email,
+              avatar: (user.displayName || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) };
+      } catch {
+        _currentUser = { id: user.uid, fullName: user.displayName || 'User', email: user.email, avatar: 'U' };
+      }
+
       return { ok: true };
     } catch (err) {
+      console.error('[AUTH] login error:', err);
       return { ok: false, msg: _friendlyError(err.code) };
     }
   },
 
+  /* ── Sign Out ─────────────────────────────────────────── */
   async logout() {
-    await signOut(window.FIREBASE_AUTH);
+    try {
+      await signOut(firebaseAuth);
+    } catch (e) { /* ignore */ }
     _currentUser = null;
     location.reload();
   },
 };
 
+/* ── Error code → user-friendly message ──────────────────── */
 function _friendlyError(code) {
   const map = {
-    'auth/email-already-in-use':    'An account with this email already exists.',
-    'auth/user-not-found':          'No account found with this email.',
-    'auth/wrong-password':          'Incorrect password.',
-    'auth/invalid-email':           'Please enter a valid email address.',
-    'auth/weak-password':           'Password must be at least 6 characters.',
-    'auth/too-many-requests':       'Too many attempts. Please try again later.',
-    'auth/network-request-failed':  'Network error. Check your internet connection.',
-    'auth/invalid-credential':      'Invalid email or password.',
+    'auth/email-already-in-use':   'An account with this email already exists.',
+    'auth/user-not-found':         'No account found with this email.',
+    'auth/wrong-password':         'Incorrect password. Please try again.',
+    'auth/invalid-email':          'Please enter a valid email address.',
+    'auth/weak-password':          'Password must be at least 6 characters.',
+    'auth/too-many-requests':      'Too many attempts. Please try again later.',
+    'auth/network-request-failed': 'Network error. Check your internet connection.',
+    'auth/invalid-credential':     'Invalid email or password.',
+    'auth/operation-not-allowed':  'Email/password login is not enabled in Firebase Console.',
   };
-  return map[code] || 'Something went wrong. Please try again.';
+  return map[code] || `Authentication error (${code}). Please try again.`;
 }
+
+console.log('[FinAI] Auth module loaded ✓');

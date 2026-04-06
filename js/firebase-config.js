@@ -1,6 +1,6 @@
 /* ============================================================
    firebase-config.js — Firebase SDK Initialization for FinAI
-   Uses CDN ESM imports (no bundler needed for static HTML site)
+   Exports auth + db instances directly for peer module imports.
    ============================================================ */
 
 import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -19,7 +19,12 @@ const firebaseConfig = {
 
 const _app = initializeApp(firebaseConfig);
 
-window.FIREBASE_AUTH = getAuth(_app);
-window.FIREBASE_DB   = getFirestore(_app);
+// Export as named exports for sibling modules to import directly
+export const firebaseAuth = getAuth(_app);
+export const firebaseDb   = getFirestore(_app);
+
+// Also expose on window for non-module scripts (market.js, charts.js etc.)
+window.FIREBASE_AUTH = firebaseAuth;
+window.FIREBASE_DB   = firebaseDb;
 
 console.log('[FinAI] Firebase initialized ✓');
