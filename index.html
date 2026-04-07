@@ -397,12 +397,23 @@
 
         <div class="divider-row"><span>— OR —</span></div>
 
-        <!-- Paste Text -->
+        <!-- Paste Text / File Info -->
         <div class="paste-section">
-          <label class="input-label">Paste Financial Text</label>
-          <textarea id="paste-text" class="paste-textarea"
-            placeholder="Paste annual report excerpts, news articles, press releases, or any financial text here…"
-            rows="6"></textarea>
+          <label class="input-label" id="input-label">Paste Financial Text</label>
+          <div id="paste-text-wrapper">
+            <textarea id="paste-text" class="paste-textarea"
+              placeholder="Paste annual report excerpts, news articles, press releases, or any financial text here…"
+              rows="6"></textarea>
+          </div>
+          
+          <div id="file-ready-card" class="hidden" style="background: var(--bg-card); border: 1.5px solid var(--accent-blue); border-radius: var(--radius-md); padding: 20px; display: flex; align-items: center; gap: 16px; margin-bottom: 10px; box-shadow: 0 4px 20px rgba(59,130,246,0.15);">
+            <div style="width: 48px; height: 48px; background: rgba(59,130,246,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">📄</div>
+            <div style="flex: 1;">
+              <div id="file-ready-name" style="font-weight: 700; font-size: 15px; color: var(--text-primary); margin-bottom: 2px;">Document_Ready.pdf</div>
+              <div id="file-ready-status" style="font-size: 11px; color: var(--accent-blue); font-weight: 600;">Deep AI Analysis Ready</div>
+            </div>
+            <button id="clear-file-btn" style="color: var(--text-muted); font-size: 18px; padding: 8px;">✕</button>
+          </div>
         </div>
 
         <!-- Quick Templates -->

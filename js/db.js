@@ -23,13 +23,13 @@ import {
 /* ─── Seed data (used only to populate DB on first run) ─── */
 export const SEED_DOCS = [
   {
-    name: "Reliance Industries AR 2024", type: "Annual Report", sector: "Energy",
-    date: "Mar 28, 2025", sentiment: "positive", sentimentScore: 78, confidence: 0.91, icon: "📊",
-    summary: "Strong diversified revenue growth, particularly in Jio and retail segments. EBITDA margins remain robust despite global headwinds.",
-    xaiText: "Despite strong revenue growth of 15%, we are cautious due to unprecedented market volatility and significant delays in our supply chain which could negatively impact future earnings.",
-    xaiHighlights: [{ text: "strong revenue growth of 15%", type: "pos" }, { text: "unprecedented market volatility", type: "neg" }, { text: "significant delays in our supply chain", type: "neg" }, { text: "negatively impact future earnings", type: "neg" }],
-    keyPoints: ["Revenue up 18.2% YoY to ₹9,74,532 Cr", "Jio platforms crossed 500 million subscribers", "New Energy initiatives scaling rapidly", "Global crude oil volatility poses margin risk"],
-    risks: [{ level: "high", text: "Global crude oil price volatility may compress refining margins by 4-6% in upcoming quarters." }, { level: "medium", text: "Regulatory headwinds in telecom sector may slow 5G monetization timeline." }, { level: "low", text: "Currency depreciation risk on dollar-denominated debt." }],
+    name: "TCS Annual Report 2024", type: "Annual Report", sector: "Technology",
+    date: "Mar 28, 2025", sentiment: "positive", sentimentScore: 82, confidence: 0.94, icon: "📊",
+    summary: "Strong global demand for AI-driven transformation and cloud services. Operating margins remain best-in-class despite talent cost pressures.",
+    xaiText: "We continue to see robust demand for our cloud and AI services. Despite a tightening global macro environment, our deal pipeline remains strong and margins have slightly expanded due to operational efficiencies.",
+    xaiHighlights: [{ text: "robust demand for our cloud and AI services", type: "pos" }, { text: "deal pipeline remains strong", type: "pos" }, { text: "tightening global macro environment", type: "neg" }, { text: "margins have slightly expanded", type: "pos" }],
+    keyPoints: ["Revenue up 14.2% in constant currency", "GenAI engagements reached a significant scale", "Dividends increased by ₹45 per share", "Attrition rate improved to 12.5%"],
+    risks: [{ level: "medium", text: "Slower decision-making in the BFSI segment due to US interest rate uncertainty." }, { level: "medium", text: "Currency fluctuations in the EUR region impacting revenue translating to INR." }, { level: "low", text: "Competition from niche boutique AI consulting firms." }],
     tags: ["FY24", "Large Cap", "India"],
   },
   {
@@ -58,12 +58,12 @@ export const SEED_COMPANIES = [
   { name: "Infosys Ltd.",  ticker: "INFY",       score: 74, cls: "positive", barColor: "#22c55e" },
   { name: "HDFC Bank",     ticker: "HDFCBANK",   score: 52, cls: "neutral",  barColor: "#f59e0b" },
   { name: "Adani Ports",   ticker: "ADANIPORTS", score: 29, cls: "negative", barColor: "#ef4444" },
-  { name: "Reliance Ind.", ticker: "RELIANCE",   score: 78, cls: "positive", barColor: "#22c55e" },
+  { name: "TCS",           ticker: "TCS",         score: 82, cls: "positive", barColor: "#22c55e" },
 ];
 
 /* ─── Known seeded document names ──────────────────────────── */
 const SEEDED_NAMES = new Set([
-  'Reliance Industries AR 2024',
+  'TCS Annual Report 2024',
   'HDFC Bank Q3 Results',
   'Adani Ports Risk Disclosure',
 ]);
@@ -183,7 +183,7 @@ const STATIC_DATA = {
     { name: "Pharma",          value: "-22%", direction: "down", fill: 22, color: "#f43f5e" },
   ],
   templates: [
-    "Reliance Industries AR 2024", "HDFC Bank Q3 Results",
+    "TCS Annual Report 2024", "HDFC Bank Q3 Results",
     "Adani Ports Risk Disclosure", "Infosys Quarterly Earnings", "Nifty 50 Analysis",
   ],
   analysisOptions: [

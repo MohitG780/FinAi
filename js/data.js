@@ -13,15 +13,15 @@
   const SECTOR_MAP = [
     { name: 'Technology',        symbols: ['INFY.NS', 'TCS.NS', 'WIPRO.NS'],           color: '#3b82f6' },
     { name: 'Banking & Finance', symbols: ['HDFCBANK.NS', 'ICICIBANK.NS'],              color: '#8b5cf6' },
-    { name: 'Energy',            symbols: ['RELIANCE.NS'],                              color: '#ef4444' },
+    { name: 'Energy',            symbols: ['TATAPOWER.NS'],                             color: '#ef4444' },
     { name: 'Infrastructure',    symbols: ['ADANIPORTS.NS'],                            color: '#f59e0b' },
     { name: 'Telecom',           symbols: ['BHARTIARTL.NS'],                            color: '#22c55e' },
-    { name: 'Diversified',       symbols: ['RELIANCE.NS', 'INFY.NS', 'TCS.NS'],        color: '#f43f5e' },
+    { name: 'Diversified',       symbols: ['TCS.NS', 'INFY.NS', 'WIPRO.NS'],           color: '#f43f5e' },
   ];
 
   /* ── COMPANY → STOCK MAPPING ─────────────────────────────── */
   const COMPANY_MAP = [
-    { name: 'Reliance Ind.', ticker: 'RELIANCE',   symbol: 'RELIANCE.NS' },
+    { name: 'TCS',           ticker: 'TCS',         symbol: 'TCS.NS'      },
     { name: 'HDFC Bank',     ticker: 'HDFCBANK',   symbol: 'HDFCBANK.NS' },
     { name: 'Infosys Ltd.',  ticker: 'INFY',        symbol: 'INFY.NS'     },
     { name: 'TCS',           ticker: 'TCS',         symbol: 'TCS.NS'      },
@@ -219,7 +219,7 @@
     ],
 
     companies: [
-      { name: 'Reliance Ind.',  ticker: 'RELIANCE',   score: 68, cls: 'positive', barColor: '#22c55e', price: '₹2,845', change: '+1.2%' },
+      { name: 'TCS',            ticker: 'TCS',        score: 82, cls: 'positive', barColor: '#22c55e', price: '₹4,120', change: '+1.5%' },
       { name: 'HDFC Bank',      ticker: 'HDFCBANK',   score: 52, cls: 'neutral',  barColor: '#f59e0b', price: '₹1,680', change: '+0.4%' },
       { name: 'Infosys Ltd.',   ticker: 'INFY',       score: 74, cls: 'positive', barColor: '#22c55e', price: '₹1,520', change: '+2.1%' },
       { name: 'TCS',            ticker: 'TCS',        score: 71, cls: 'positive', barColor: '#22c55e', price: '₹3,680', change: '+1.8%' },

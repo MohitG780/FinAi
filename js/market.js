@@ -17,7 +17,7 @@
   ];
 
   const STOCKS = [
-    { symbol: 'RELIANCE.NS', name: 'Reliance Industries', shortName: 'RELIANCE' },
+    { symbol: 'TATAMOTORS.NS', name: 'Tata Motors', shortName: 'TATAMOTORS' },
     { symbol: 'HDFCBANK.NS', name: 'HDFC Bank', shortName: 'HDFCBANK' },
     { symbol: 'INFY.NS', name: 'Infosys', shortName: 'INFY' },
     { symbol: 'TCS.NS', name: 'TCS', shortName: 'TCS' },
@@ -84,13 +84,13 @@
   const _prevPrices = {};
   const _basePrices = {
     '^NSEI': 23450, '^BSESN': 77200, '^NSEBANK': 49800,
-    'RELIANCE.NS': 2845, 'HDFCBANK.NS': 1680, 'INFY.NS': 1520,
+    'TATAMOTORS.NS': 985, 'HDFCBANK.NS': 1680, 'INFY.NS': 1520,
     'TCS.NS': 3680, 'ADANIPORTS.NS': 1190, 'WIPRO.NS': 485,
     'ICICIBANK.NS': 1245, 'BHARTIARTL.NS': 1680,
   };
   const _nameMap = {
     '^NSEI': ['NIFTY 50','NIFTY'], '^BSESN': ['SENSEX','SENSEX'], '^NSEBANK': ['BANK NIFTY','BANKNIFTY'],
-    'RELIANCE.NS': ['Reliance Industries','RELIANCE'], 'HDFCBANK.NS': ['HDFC Bank','HDFCBANK'],
+    'TATAMOTORS.NS': ['Tata Motors','TATAMOTORS'], 'HDFCBANK.NS': ['HDFC Bank','HDFCBANK'],
     'INFY.NS': ['Infosys','INFY'], 'TCS.NS': ['TCS','TCS'],
     'ADANIPORTS.NS': ['Adani Ports','ADANIPORTS'], 'WIPRO.NS': ['Wipro','WIPRO'],
     'ICICIBANK.NS': ['ICICI Bank','ICICIBANK'], 'BHARTIARTL.NS': ['Bharti Airtel','BHARTIARTL'],
