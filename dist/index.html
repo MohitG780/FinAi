@@ -9,8 +9,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script type="module" crossorigin src="/assets/index-wVXUayYj.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-DZ1b3dch.css">
+  <script type="module" crossorigin src="/assets/index-B-TWP2RL.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-C15sCRS8.css">
 </head>
 <body>
 
@@ -254,17 +254,17 @@
 
         <!-- Stats Row -->
         <div class="stats-row">
-          <div class="stat-card" data-color="blue">
+          <div class="stat-card" data-color="blue" data-nav="reports" style="cursor:pointer" title="View all analyses">
             <div class="stat-icon">📄</div>
             <span class="stat-val">24</span>
             <span class="stat-lbl">Docs Analysed</span>
           </div>
-          <div class="stat-card" data-color="green">
+          <div class="stat-card" data-color="green" data-nav="insights" style="cursor:pointer" title="View sentiment insights">
             <div class="stat-icon">📈</div>
             <span class="stat-val">68%</span>
             <span class="stat-lbl">Positive Tone</span>
           </div>
-          <div class="stat-card" data-color="amber">
+          <div class="stat-card" data-color="amber" data-nav="risks" style="cursor:pointer" title="View detected risks">
             <div class="stat-icon">⚠️</div>
             <span class="stat-val">47</span>
             <span class="stat-lbl">Risks Found</span>
@@ -505,14 +505,21 @@
     <div class="toast-text" id="toast-text">Done!</div>
   </div>
 
-  <!-- Notification Dropdown -->
-  <div class="notif-dropdown hidden" id="notif-dropdown">
-    <div class="notif-dropdown-header">
-      <span class="notif-dropdown-title">Notifications</span>
-      <button class="notif-clear-btn" id="notif-clear">Clear all</button>
+  <!-- Notification Bottom Sheet -->
+  <div class="modal-overlay hidden" id="notif-overlay">
+    <div class="modal-sheet" id="notif-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-content">
+        <div class="notif-sheet-header">
+          <h3 class="notif-sheet-title">Notifications</h3>
+          <button class="notif-clear-btn" id="notif-clear">Clear all</button>
+        </div>
+        <div id="notif-list"><!-- populated by JS --></div>
+      </div>
     </div>
-    <!-- populated dynamically by JS from Firestore -->
   </div>
+  <!-- legacy alias so renderNotifications() still finds the element -->
+  <div class="hidden" id="notif-dropdown"></div>
 
   <!-- About / Tech Stack Modal -->
   <div class="modal-overlay hidden" id="about-modal-overlay">
