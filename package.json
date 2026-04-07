@@ -1,0 +1,26 @@
+{
+  "name": "majorproject",
+  "version": "1.0.0",
+  "description": "<div align=\"center\">   <img src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Python-logo-notext.svg/120px-Python-logo-notext.svg.png\" alt=\"Logo\" width=\"80\" height=\"auto\" style=\"display: none;\"/>   <h1>FinAI \u2014 AI Financial Analyst</h1>   <p>A modern, interactive, and beautifully designed web application for AI-driven financial insights, stock tracking, and document sentiment analysis.</p> </div>",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MohitG780/FinAi.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MohitG780/FinAi/issues"
+  },
+  "homepage": "https://github.com/MohitG780/FinAi#readme",
+  "devDependencies": {
+    "vite": "^8.0.5"
+  }
+}
