@@ -31,7 +31,7 @@
 - **Frontend:** Vanilla HTML5, CSS3, JavaScript (ES modules)
 - **Backend/BaaS:** Firebase Authentication & Cloud Firestore (v10.12 Web SDK)
 - **Icons & APIs:** Gravatar Web API, inline custom SVGs
-- **Deployment:** GitHub Pages & GitHub Actions Secrets
+- **Deployment:** Vercel (Optimized Vite Build)
 
 ## 🚀 Setting Up Locally
 
@@ -43,35 +43,40 @@ If you want to run this application on your local machine:
    cd FinAi
    ```
 
-2. **Create your Firebase Config:**
-   Copy the example template and fill in your Firebase API keys.
+2. **Install Dependencies:**
    ```bash
-   cp js/firebase-config.example.js js/firebase-config.js
+   npm install
    ```
-   *Note:* Replace the placeholder variables inside `js/firebase-config.js` with your active Firebase project settings. Make sure **Email/Password** Auth and **Firestore Database** are enabled in your console.
 
-3. **Serve the Application:**
-   Because the app uses ES Modules (`<script type="module">`), you must serve it over HTTP:
+3. **Create your Environment Variables:**
+   Create a `.env` file in the root directory and add your Firebase configurations:
+   ```env
+   VITE_FIREBASE_API_KEY=your_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+   VITE_FIREBASE_PROJECT_ID=your_project_id
+   VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+   VITE_FIREBASE_APP_ID=your_app_id
+   VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
+   ```
+   *Note:* Replace the placeholder variables with your active Firebase project settings. Make sure **Email/Password** Auth and **Firestore Database** are enabled in your console.
+
+4. **Serve the Application:**
+   Start the Vite development server:
    ```bash
-   npx serve .
+   npm run dev
    ```
-   *Navigate to `http://localhost:3000` to start analyzing!*
+   *Navigate to `http://localhost:5173` (or the URL shown in your terminal) to start analyzing!*
 
-## 🌐 Deployment (GitHub Pages)
+## 🌐 Deployment (Vercel)
 
-This project runs a CI/CD GitHub Actions Workflow to keep your Firebase keys entirely safe from the git history.
+This project is configured to be seamlessly deployed via Vercel using the optimized Vite build output.
 
-1. Go to your GitHub repository -> **Settings** -> **Secrets and variables** -> **Actions**.
-2. Add the following repository secrets provided by your Firebase Project:
-   - `FIREBASE_API_KEY`
-   - `FIREBASE_AUTH_DOMAIN`
-   - `FIREBASE_PROJECT_ID`
-   - `FIREBASE_STORAGE_BUCKET`
-   - `FIREBASE_MESSAGING_SENDER_ID`
-   - `FIREBASE_APP_ID`
-   - `FIREBASE_MEASUREMENT_ID`
-3. Push to the `main` branch. GitHub Actions will auto-inject the keys into the built code and automatically deploy the application to your `gh-pages` branch.
+1. Create a new project on [Vercel](https://vercel.com/) and import your repository.
+2. In the "Environment Variables" section before deploying, add all the `VITE_FIREBASE_*` variables from your `.env` file.
+3. The build command will automatically run `npm run build` and the output directory will be `dist`.
+4. Deploy to production. Future pushes to the `main` branch will automatically trigger production deployments.
 
 ## 🛡️ Security Note
 
-The real `firebase-config.js` containing API keys is added to `.gitignore`. Never commit your real API keys directly to the public repository. Use the automated deployment pipeline provided to handle secrets securely!
+The `.env` file containing API keys is added to `.gitignore`. Never commit your real API keys directly to the public repository. Use your hosting provider's environment variables dashboard (e.g., Vercel) to configure your secrets securely.
