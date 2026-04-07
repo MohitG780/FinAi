@@ -956,21 +956,88 @@ body,
 .user-dropdown-item.logout { color: var(--accent-red); }
 .user-dropdown-item.logout:hover { background: rgba(239,68,68,.08); color: var(--accent-red); }
 .user-dropdown-divider { height: 1px; background: var(--border-color); }
+/* ── Neutral badge for AI score ──────────────────── */
+.hero-score-badge.neutral-badge {
+  background: rgba(100,116,139,0.15);
+  color: var(--text-secondary);
+  border: 1px solid rgba(100,116,139,0.3);
+}
 
-/* Light theme specific tweaks */
+/* ── Light theme comprehensive fixes ─────────────── */
+/* Keep hero card bg always dark so white text stays readable */
 [data-theme="light"] .hero-card-bg {
-  background: linear-gradient(135deg,#dbeafe 0%,#ede9fe 50%,#e0e7ff 100%);
-  border-color: rgba(37,99,235,0.2);
+  background: linear-gradient(135deg,#1e3a5f 0%,#2d1b69 50%,#1a2744 100%);
+  border-color: rgba(59,130,246,0.4);
 }
-[data-theme="light"] .xai-text-block { background: var(--bg-secondary); }
-[data-theme="light"] .stat-card { box-shadow: 0 2px 12px rgba(37,99,235,0.07); }
-[data-theme="light"] .notif-dot { border-color: var(--bg-primary); }
-[data-theme="light"] .splash-bg {
-  background: radial-gradient(ellipse 60% 50% at 50% 20%,rgba(59,130,246,.1) 0%,transparent 70%),
-              radial-gradient(ellipse 40% 40% at 80% 80%,rgba(139,92,246,.07) 0%,transparent 70%);
-}
-[data-theme="light"] .paste-textarea { background: var(--input-bg); }
-[data-theme="light"] .analysis-running-modal { background: var(--bg-card); }
-[data-theme="light"] .bottom-nav { box-shadow: 0 -4px 20px rgba(0,0,0,0.06); }
-[data-theme="light"] .top-nav { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+[data-theme="light"] .hero-card-label,
+[data-theme="light"] .hero-score-unit,
+[data-theme="light"] .hero-card-desc { color: rgba(255,255,255,0.82) !important; }
 
+/* Stat cards */
+[data-theme="light"] .stat-card { background:#ffffff; box-shadow:0 2px 12px rgba(37,99,235,0.07); }
+[data-theme="light"] .stat-val { color:#0f172a; }
+[data-theme="light"] .stat-lbl { color:#475569; }
+
+/* Dashboard cards & text */
+[data-theme="light"] .greeting-name { color:#0f172a; }
+[data-theme="light"] .section-title { color:#0f172a; }
+[data-theme="light"] .doc-card { background:#ffffff; }
+[data-theme="light"] .doc-name { color:#0f172a; }
+[data-theme="light"] .stock-symbol { color:#0f172a; }
+[data-theme="light"] .stock-price { color:#0f172a; }
+[data-theme="light"] .index-price { color:#0f172a; }
+[data-theme="light"] .sector-card { background:#ffffff; }
+[data-theme="light"] .sector-name { color:#475569; }
+
+/* Report cards */
+[data-theme="light"] .report-card { background:#ffffff; }
+[data-theme="light"] .report-company { color:#0f172a; }
+[data-theme="light"] .report-summary { color:#475569; }
+[data-theme="light"] .filter-tab { background:#ffffff; color:#475569; }
+
+/* Insights page */
+[data-theme="light"] .chart-card { background:#ffffff; }
+[data-theme="light"] .company-compare-card { background:#ffffff; }
+[data-theme="light"] .company-name { color:#0f172a; }
+[data-theme="light"] .risk-bar-label { color:#0f172a; }
+[data-theme="light"] .risk-bar-val { color:#475569; }
+[data-theme="light"] .keyword-chip { color:#1e293b; }
+
+/* XAI highlights — visible on light background */
+[data-theme="light"] .xai-text-block { background:#f1f5f9; color:#0f172a; }
+[data-theme="light"] .xai-neg { background:rgba(220,38,38,0.15); color:#991b1b; }
+[data-theme="light"] .xai-pos { background:rgba(22,163,74,0.15); color:#166534; }
+
+/* Summary & Risk items */
+[data-theme="light"] .summary-bullets li { color:#1e293b; }
+[data-theme="light"] .risk-text { color:#1e293b; }
+[data-theme="light"] .risk-item { background:#f1f5f9; }
+[data-theme="light"] .result-card { background:#ffffff; }
+
+/* Modals */
+[data-theme="light"] .modal-sheet { background:#f8fafc; }
+[data-theme="light"] .modal-doc-title { color:#0f172a; }
+[data-theme="light"] .modal-sentiment-row { background:#ffffff; }
+[data-theme="light"] .analysis-running-modal { background:#ffffff; }
+[data-theme="light"] .analysis-running-title { color:#0f172a; }
+
+/* Notification */
+[data-theme="light"] .notif-dropdown { background:#ffffff; }
+[data-theme="light"] .notif-text { color:#0f172a; }
+[data-theme="light"] .notif-dot { border-color:var(--bg-primary); }
+
+/* About modal */
+[data-theme="light"] .about-tech-name { color:#0f172a; }
+[data-theme="light"] .about-tech-desc { color:#475569; }
+
+/* Misc */
+[data-theme="light"] .splash-bg {
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 20%,rgba(59,130,246,.1) 0%,transparent 70%),
+    radial-gradient(ellipse 40% 40% at 80% 80%,rgba(139,92,246,.07) 0%,transparent 70%);
+}
+[data-theme="light"] .paste-textarea { background:var(--input-bg); color:#0f172a; }
+[data-theme="light"] .upload-title { color:#0f172a; }
+[data-theme="light"] .page-title { color:#0f172a; }
+[data-theme="light"] .bottom-nav { box-shadow:0 -4px 20px rgba(0,0,0,0.06); }
+[data-theme="light"] .top-nav { box-shadow:0 2px 12px rgba(0,0,0,0.06); }

@@ -4,24 +4,30 @@
 
 const Charts = {
 
-  // Mini sparkline on hero card
-  drawMiniChart(canvasId) {
+  // Mini sparkline on hero card — accepts live data array
+  drawMiniChart(canvasId, livePoints) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const w = canvas.width, h = canvas.height;
-    const points = [42, 50, 45, 58, 62, 55, 70, 68, 78, 72, 85, 80, 87];
+    const points = (livePoints && livePoints.length >= 2)
+      ? livePoints
+      : [42, 50, 45, 58, 62, 55, 70, 68, 78, 72, 85, 80, 87];
     const min = Math.min(...points), max = Math.max(...points);
     const pad = 6;
     const xs = (i) => pad + (i / (points.length - 1)) * (w - pad * 2);
-    const ys = (v) => h - pad - ((v - min) / (max - min)) * (h - pad * 2);
+    const ys = (v) => h - pad - ((v - min) / (max - min || 1)) * (h - pad * 2);
 
     ctx.clearRect(0, 0, w, h);
 
+    // Color sparkline green if trending up, red if trending down
+    const trend = points[points.length - 1] >= points[0] ? '#22c55e' : '#ef4444';
+    const gradAlpha = points[points.length - 1] >= points[0] ? 'rgba(34,197,94,' : 'rgba(239,68,68,';
+
     // Gradient fill
     const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, 'rgba(59,130,246,0.35)');
-    grad.addColorStop(1, 'rgba(59,130,246,0)');
+    grad.addColorStop(0, gradAlpha + '0.35)');
+    grad.addColorStop(1, gradAlpha + '0)');
 
     ctx.beginPath();
     ctx.moveTo(xs(0), ys(points[0]));
@@ -44,7 +50,7 @@ const Charts = {
       const cpx = (xs(i - 1) + xs(i)) / 2;
       ctx.bezierCurveTo(cpx, ys(points[i - 1]), cpx, ys(p), xs(i), ys(p));
     });
-    ctx.strokeStyle = '#3b82f6';
+    ctx.strokeStyle = trend;
     ctx.lineWidth = 2;
     ctx.stroke();
 
