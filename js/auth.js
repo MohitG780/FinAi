@@ -25,17 +25,30 @@ let _currentUser       = null;
 let _onReadyCallbacks  = [];
 let _isReady           = false;
 
+/* ── Initials Helper ────────────────────────────────────── */
+function getInitials(name) {
+  const words = (name || 'User').split(' ').filter(Boolean);
+  if (words.length >= 2) {
+    return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+  }
+  if (words.length === 1) {
+    return words[0].slice(0, 2).toUpperCase();
+  }
+  return 'U';
+}
+
 /* ── Gravatar Helper ────────────────────────────────────── */
 async function getGravatarUrl(email) {
-  if (!email) return 'U';
+  if (!email) return null;
   try {
     const msgUint8 = new TextEncoder().encode(email.trim().toLowerCase());
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return `https://www.gravatar.com/avatar/${hashHex}?d=identicon`;
+    // Use d=404 to detect if a Gravatar profile actually exists
+    return `https://www.gravatar.com/avatar/${hashHex}?d=404`;
   } catch (e) {
-    return 'U';
+    return null;
   }
 }
 
@@ -72,8 +85,17 @@ onAuthStateChanged(firebaseAuth, (firebaseUser) => {
           Object.assign(_currentUser, snap.data());
         }
 
+        // If no image avatar exists, ensure avatar property has correct initials
+        if (!_currentUser.avatar || !_currentUser.avatar.startsWith('http')) {
+          _currentUser.avatar = getInitials(_currentUser.fullName);
+        }
+
         // Patch avatar/name into the UI if already rendered
-        const avatarEls = [document.getElementById('avatar-chip'), document.getElementById('ud-avatar')];
+        const avatarEls = [
+          document.getElementById('avatar-chip'), 
+          document.getElementById('ud-avatar'),
+          document.getElementById('about-user-icon')
+        ];
         const nameEl    = document.getElementById('ud-name');
         const emailEl   = document.getElementById('ud-email');
         const greetEl   = document.getElementById('greeting-name');
@@ -86,7 +108,7 @@ onAuthStateChanged(firebaseAuth, (firebaseUser) => {
             el.style.backgroundSize = 'cover';
             el.style.backgroundPosition = 'center';
           } else {
-            el.textContent = (_currentUser.fullName || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            el.textContent = getInitials(_currentUser.fullName);
             el.style.backgroundImage = 'none'; // Clear if no avatar
           }
         });
