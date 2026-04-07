@@ -21,7 +21,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* ─── Seed data (used only to populate DB on first run) ─── */
-const SEED_DOCS = [
+export const SEED_DOCS = [
   {
     name: "Reliance Industries AR 2024", type: "Annual Report", sector: "Energy",
     date: "Mar 28, 2025", sentiment: "positive", sentimentScore: 78, confidence: 0.91, icon: "📊",
@@ -54,7 +54,7 @@ const SEED_DOCS = [
   },
 ];
 
-const SEED_COMPANIES = [
+export const SEED_COMPANIES = [
   { name: "Infosys Ltd.",  ticker: "INFY",       score: 74, cls: "positive", barColor: "#22c55e" },
   { name: "HDFC Bank",     ticker: "HDFCBANK",   score: 52, cls: "neutral",  barColor: "#f59e0b" },
   { name: "Adani Ports",   ticker: "ADANIPORTS", score: 29, cls: "negative", barColor: "#ef4444" },
@@ -149,23 +149,23 @@ function listenToCompanies(callback) {
 }
 
 /* ─── Save a new analysis result to Firestore ────────────── */
-async function saveAnalysis(analysisResult, inputText) {
+async function saveAnalysis(analysisResult, inputText, docName = 'Pasted Financial Text', docType = 'User Analysis', sector = 'General') {
   const user = window.AUTH.getUser();
   await addDoc(collection(firebaseDb, 'analyses'), {
-    name:           'Pasted Financial Text',
-    type:           'User Analysis',
-    sector:         'General',
+    name:           docName,
+    type:           docType,
+    sector:         sector,
     date:           new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
     sentiment:      analysisResult.sentiment,
     sentimentScore: analysisResult.sentimentScore,
     confidence:     analysisResult.confidence,
-    icon:           '📝',
+    icon:           docType === 'Annual Report' ? '📊' : (docType === 'Risk Filing' ? '⚠️' : '📝'),
     summary:        analysisResult.summary || '',
     xaiText:        inputText.slice(0, 500),
     xaiHighlights:  analysisResult.xaiHighlights || [],
     keyPoints:      analysisResult.keyPoints || [],
     risks:          analysisResult.risks || [],
-    tags:           ['User Analysis'],
+    tags:           [docType],
     userId:         user ? user.id : 'anonymous',
     createdAt:      serverTimestamp(),
     isSeeded:       false,
@@ -183,8 +183,8 @@ const STATIC_DATA = {
     { name: "Pharma",          value: "-22%", direction: "down", fill: 22, color: "#f43f5e" },
   ],
   templates: [
-    "Infosys Annual Report 2024", "SEBI Risk Disclosure Template",
-    "TCS Q4 Earnings Call",       "Wipro Press Release", "Nifty 50 Analysis",
+    "Reliance Industries AR 2024", "HDFC Bank Q3 Results",
+    "Adani Ports Risk Disclosure", "Infosys Quarterly Earnings", "Nifty 50 Analysis",
   ],
   analysisOptions: [
     { id: "sentiment", icon: "💬", label: "Sentiment Analysis" },
