@@ -193,6 +193,7 @@
     DB.listenToAnalyses((analyses) => {
       _liveAnalyses = analyses;
       renderDocList(_liveAnalyses.slice(0, 3));
+      renderNotifications(_liveAnalyses);
       if (state.currentPage === 'reports') renderReportsList(state.reportFilter);
     });
 
@@ -542,6 +543,77 @@
     });
   }
 
+  /* ── Render dynamic notifications from live Firestore data ─── */
+  function renderNotifications(analyses) {
+    const dropdown = $('notif-dropdown');
+    if (!dropdown) return;
+
+    const header = dropdown.querySelector('.notif-dropdown-header');
+
+    const items = analyses.slice(0, 5).map((doc, i) => {
+      const isUnread = i < 2;
+      const riskCount = (doc.risks || []).filter(r => r.level === 'high').length;
+      const text = riskCount > 0
+        ? `${riskCount} high-risk factor${riskCount > 1 ? 's' : ''} in ${doc.name}`
+        : `${doc.name} — ${capitalize(doc.sentiment)} sentiment`;
+      const badge = doc.sentiment === 'positive'
+        ? `<span class="notif-badge positive">+${doc.sentimentScore}</span>`
+        : doc.sentiment === 'negative'
+        ? `<span class="notif-badge negative">Risk</span>`
+        : `<span class="notif-badge neutral">${doc.sentimentScore}</span>`;
+
+      return `
+        <div class="notif-item ${isUnread ? 'unread' : ''}" data-id="${doc.id}" style="cursor:pointer">
+          <div class="notif-dot-left" style="${isUnread ? '' : 'opacity:0'}"></div>
+          <div class="notif-content">
+            <p class="notif-text">${text}</p>
+            <p class="notif-time">${doc.date || 'Recently'}</p>
+          </div>
+          ${badge}
+        </div>`;
+    });
+
+    items.push(`
+      <div class="notif-item">
+        <div class="notif-dot-left" style="opacity:0"></div>
+        <div class="notif-content">
+          <p class="notif-text">FinBERT NLP engine ready — v2.1</p>
+          <p class="notif-time">System</p>
+        </div>
+        <span class="notif-badge neutral">Info</span>
+      </div>`);
+
+    dropdown.innerHTML = '';
+    if (header) dropdown.appendChild(header);
+    dropdown.insertAdjacentHTML('beforeend', items.join(''));
+
+    // Show/hide the bell dot
+    const dot = $('notif-btn') && $('notif-btn').querySelector('.notif-dot');
+    if (dot) dot.style.display = analyses.length > 0 ? 'block' : 'none';
+
+    // Clicking a notif opens its detail modal
+    dropdown.querySelectorAll('.notif-item[data-id]').forEach(item => {
+      item.addEventListener('click', e => {
+        e.stopPropagation();
+        const doc = _liveAnalyses.find(d => d.id === item.dataset.id);
+        if (doc) { $('notif-dropdown').classList.add('hidden'); openDocModal(doc); }
+      });
+    });
+
+    // Re-bind clear btn (since we rebuilt the DOM)
+    const clearBtn = dropdown.querySelector('#notif-clear');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        dropdown.querySelectorAll('.notif-dot-left').forEach(d => d.style.opacity = '0');
+        dropdown.querySelectorAll('.notif-item').forEach(i => i.classList.remove('unread'));
+        if (dot) dot.style.display = 'none';
+        dropdown.classList.add('hidden');
+        showToast('✓', 'Notifications cleared');
+      });
+    }
+  }
+
   function navigateTo(page) {
     if (state.currentPage === page) return;
 
@@ -779,52 +851,119 @@
   function showAnalysisResults() {
     const r = state.lastAnalysisResult;
     if (!r) return;
-    const container = $('analysis-results');
-    container.classList.remove('hidden');
 
-    container.innerHTML = `
-      <div class="results-container">
-        <h2 class="results-title">Analysis Complete ✅</h2>
-        <p class="results-meta">Processed by FinBERT NLP · ${new Date().toLocaleTimeString()} · ${state.selectedOptions.length} tasks · ${r.stats.totalTokens} tokens analysed</p>
+    // Show results in the modal sheet instead of inline below the form
+    const overlay  = $('doc-modal-overlay');
+    const content  = $('doc-modal-content');
+    overlay.classList.remove('hidden');
 
-        ${state.selectedOptions.includes('sentiment') ? buildSentimentCard(r) : ''}
-        ${state.selectedOptions.includes('xai') ? buildXAICard(r) : ''}
-        ${state.selectedOptions.includes('summary') ? buildSummaryCard(r) : ''}
-        ${state.selectedOptions.includes('risk') ? buildRiskCard(r) : ''}
+    const sentimentColor = r.sentiment === 'positive' ? '#22c55e'
+      : r.sentiment === 'negative' ? '#ef4444' : '#f59e0b';
+    const pillBg = r.sentiment === 'positive'
+      ? 'background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)'
+      : r.sentiment === 'negative'
+      ? 'background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)'
+      : 'background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.25)';
 
-        <div class="result-card">
-          <div class="result-card-header">
-            <div class="result-card-title"><span>📊</span> Analysis Statistics</div>
-            <div class="result-pill" style="background:rgba(6,182,212,.12);color:#06b6d4;border:1px solid rgba(6,182,212,.3)">NLP Stats</div>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
-            <div style="text-align:center;padding:12px;background:var(--bg-secondary);border-radius:var(--radius-sm)">
-              <p style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--accent-blue)">${r.stats.totalTokens}</p>
-              <p style="font-size:10px;color:var(--text-muted);margin-top:2px">Tokens</p>
-            </div>
-            <div style="text-align:center;padding:12px;background:var(--bg-secondary);border-radius:var(--radius-sm)">
-              <p style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--accent-green)">${r.stats.positiveSignals}</p>
-              <p style="font-size:10px;color:var(--text-muted);margin-top:2px">Positive</p>
-            </div>
-            <div style="text-align:center;padding:12px;background:var(--bg-secondary);border-radius:var(--radius-sm)">
-              <p style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--accent-red)">${r.stats.negativeSignals}</p>
-              <p style="font-size:10px;color:var(--text-muted);margin-top:2px">Negative</p>
-            </div>
-          </div>
+    content.innerHTML = `
+      <div class="modal-doc-header">
+        <p class="modal-doc-label">ANALYSIS COMPLETE ✅</p>
+        <h2 class="modal-doc-title">FinBERT NLP Results</h2>
+        <div class="modal-doc-meta">
+          <span>${new Date().toLocaleTimeString()}</span>
+          <span>·</span>
+          <span>${r.stats.totalTokens} tokens</span>
+          <span>·</span>
+          <span>${state.selectedOptions.length} tasks</span>
         </div>
       </div>
+
+      <div class="modal-sentiment-row">
+        <div class="modal-sentiment-left">
+          <div class="sentiment-big-val ${r.sentiment}">${r.sentimentScore}</div>
+          <p class="sentiment-label">${capitalize(r.sentiment)} Sentiment</p>
+        </div>
+        <div class="modal-confidence-block">
+          <p class="modal-confidence-title">Model Confidence</p>
+          <div class="confidence-bar-track">
+            <div class="confidence-bar-fill" id="modal-conf-bar" style="width:0%;background:${sentimentColor}"></div>
+          </div>
+          <p class="confidence-val">${Math.round(r.confidence * 100)}%</p>
+        </div>
+      </div>
+
+      ${state.selectedOptions.includes('xai') ? `
+        <div class="modal-section-title">🔍 XAI Explanation</div>
+        <div class="xai-legend">
+          <div class="xai-legend-item"><div class="xai-dot" style="background:rgba(239,68,68,.4)"></div><span>Negative signal</span></div>
+          <div class="xai-legend-item"><div class="xai-dot" style="background:rgba(34,197,94,.35)"></div><span>Positive signal</span></div>
+        </div>
+        <div class="xai-text-block">${buildXAIHighlighted(r)}</div>
+      ` : ''}
+
+      ${state.selectedOptions.includes('summary') ? `
+        <div class="modal-section-title">📝 Key Takeaways</div>
+        <ul class="summary-bullets">
+          ${r.keyPoints.map(p => `<li>${p}</li>`).join('')}
+        </ul>
+      ` : ''}
+
+      ${state.selectedOptions.includes('risk') ? `
+        <div class="modal-section-title">⚠️ Detected Risks</div>
+        <div class="risk-list">
+          ${r.risks.map(risk => `
+            <div class="risk-item ${risk.level}">
+              <span class="risk-level-badge">${risk.level.toUpperCase()}</span>
+              <p class="risk-text">${risk.text}</p>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+
+      <div class="modal-section-title">📊 NLP Statistics</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:8px">
+        <div style="text-align:center;padding:12px;background:var(--bg-secondary);border-radius:var(--radius-sm)">
+          <p style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--accent-blue)">${r.stats.totalTokens}</p>
+          <p style="font-size:10px;color:var(--text-muted);margin-top:2px">Tokens</p>
+        </div>
+        <div style="text-align:center;padding:12px;background:var(--bg-secondary);border-radius:var(--radius-sm)">
+          <p style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--accent-green)">${r.stats.positiveSignals}</p>
+          <p style="font-size:10px;color:var(--text-muted);margin-top:2px">Positive</p>
+        </div>
+        <div style="text-align:center;padding:12px;background:var(--bg-secondary);border-radius:var(--radius-sm)">
+          <p style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:var(--accent-red)">${r.stats.negativeSignals}</p>
+          <p style="font-size:10px;color:var(--text-muted);margin-top:2px">Negative</p>
+        </div>
+      </div>
+
+      <button onclick="closeDocModal()" style="width:100%;margin-top:24px;padding:14px;background:var(--gradient-main);border-radius:var(--radius-md);font-size:14px;font-weight:700;color:white;box-shadow:0 4px 20px rgba(59,130,246,0.35)">
+        Done ✓
+      </button>
     `;
 
-    // Animate sentiment pointer
+    // Animate confidence bar
     setTimeout(() => {
-      const pointer = container.querySelector('.sentiment-pointer');
-      if (pointer) {
-        pointer.style.left = r.sentimentScore + '%';
-      }
+      const bar = $('modal-conf-bar');
+      if (bar) bar.style.width = (r.confidence * 100) + '%';
     }, 200);
 
-    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeDocModal();
+    });
+
+    initSwipeToClose($('doc-modal'), closeDocModal);
     showToast('✓', `Analysis complete! Sentiment: ${capitalize(r.sentiment)} (${r.sentimentScore}/100)`);
+  }
+
+  // Helper to get XAI highlighted HTML (used by both modal and inline)
+  function buildXAIHighlighted(r) {
+    let highlighted = r.xaiText;
+    r.xaiHighlights.forEach(h => {
+      const cls = h.type === 'pos' ? 'xai-pos' : 'xai-neg';
+      // Use replaceAll safely
+      highlighted = highlighted.split(h.text).join(`<span class="${cls}">${h.text}</span>`);
+    });
+    return highlighted;
   }
 
   function buildSentimentCard(r) {
@@ -859,12 +998,6 @@
   }
 
   function buildXAICard(r) {
-    let highlighted = r.xaiText;
-    r.xaiHighlights.forEach(h => {
-      const cls = h.type === 'pos' ? 'xai-pos' : 'xai-neg';
-      highlighted = highlighted.replace(h.text, `<span class="${cls}">${h.text}</span>`);
-    });
-
     return `
       <div class="result-card">
         <div class="result-card-header">
@@ -876,7 +1009,7 @@
           <div class="xai-legend-item"><div class="xai-dot" style="background:rgba(239,68,68,.4)"></div><span>Negative signal</span></div>
           <div class="xai-legend-item"><div class="xai-dot" style="background:rgba(34,197,94,.35)"></div><span>Positive signal</span></div>
         </div>
-        <div class="xai-text-block">${highlighted}</div>
+        <div class="xai-text-block">${buildXAIHighlighted(r)}</div>
       </div>
     `;
   }

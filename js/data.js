@@ -207,14 +207,58 @@
   ══════════════════════════════════════════════════════════ */
   window.DATA = {
 
-    /* These are initially empty and populated on first market event */
-    sectors:           [],
-    companies:         [],
-    riskBars:          [],
-    keywords:          [],
-    sentimentTimeline: { labels: [], positive: [], negative: [] },
+    /* Pre-seeded with realistic data so UI renders immediately.
+       Will be overwritten with live market-derived values on first event. */
+    sectors: [
+      { name: 'Technology',        value: '+2.4%', direction: 'up',   fill: 72, color: '#3b82f6' },
+      { name: 'Banking & Finance', value: '+0.8%', direction: 'up',   fill: 55, color: '#8b5cf6' },
+      { name: 'Energy',            value: '-1.2%', direction: 'down', fill: 38, color: '#ef4444' },
+      { name: 'Infrastructure',    value: '~0.1%', direction: 'flat', fill: 50, color: '#f59e0b' },
+      { name: 'Telecom',           value: '+1.5%', direction: 'up',   fill: 65, color: '#22c55e' },
+      { name: 'Diversified',       value: '-0.4%', direction: 'down', fill: 44, color: '#f43f5e' },
+    ],
 
-    /* recentDocs now comes from Firestore via db.js — kept as empty array */
+    companies: [
+      { name: 'Reliance Ind.',  ticker: 'RELIANCE',   score: 68, cls: 'positive', barColor: '#22c55e', price: '₹2,845', change: '+1.2%' },
+      { name: 'HDFC Bank',      ticker: 'HDFCBANK',   score: 52, cls: 'neutral',  barColor: '#f59e0b', price: '₹1,680', change: '+0.4%' },
+      { name: 'Infosys Ltd.',   ticker: 'INFY',       score: 74, cls: 'positive', barColor: '#22c55e', price: '₹1,520', change: '+2.1%' },
+      { name: 'TCS',            ticker: 'TCS',        score: 71, cls: 'positive', barColor: '#22c55e', price: '₹3,680', change: '+1.8%' },
+      { name: 'Adani Ports',    ticker: 'ADANIPORTS', score: 38, cls: 'negative', barColor: '#ef4444', price: '₹1,190', change: '-0.9%' },
+      { name: 'Wipro',          ticker: 'WIPRO',      score: 60, cls: 'positive', barColor: '#22c55e', price: '₹485',   change: '+0.7%' },
+      { name: 'ICICI Bank',     ticker: 'ICICIBANK',  score: 55, cls: 'neutral',  barColor: '#f59e0b', price: '₹1,245', change: '+0.3%' },
+      { name: 'Bharti Airtel',  ticker: 'BHARTIARTL', score: 65, cls: 'positive', barColor: '#22c55e', price: '₹1,680', change: '+1.5%' },
+    ],
+
+    riskBars: [
+      { label: 'Market Risk',      val: 'Medium', pct: 58, color: '#f59e0b' },
+      { label: 'Operational Risk', val: 'Low',    pct: 42, color: '#22c55e' },
+      { label: 'Regulatory Risk',  val: 'Medium', pct: 46, color: '#f59e0b' },
+      { label: 'Liquidity Risk',   val: 'Low',    pct: 30, color: '#22c55e' },
+      { label: 'Credit Risk',      val: 'Low',    pct: 24, color: '#3b82f6' },
+    ],
+
+    keywords: [
+      { word: 'growth',       weight: 5, color: 'rgba(34,197,94,0.2)',   textColor: '#86efac' },
+      { word: 'revenue',      weight: 5, color: 'rgba(34,197,94,0.2)',   textColor: '#86efac' },
+      { word: 'risk',         weight: 4, color: 'rgba(239,68,68,0.2)',   textColor: '#fca5a5' },
+      { word: 'volatile',     weight: 3, color: 'rgba(239,68,68,0.2)',   textColor: '#fca5a5' },
+      { word: 'headwinds',    weight: 3, color: 'rgba(239,68,68,0.2)',   textColor: '#fca5a5' },
+      { word: 'supply chain', weight: 3, color: 'rgba(239,68,68,0.2)',   textColor: '#fca5a5' },
+      { word: 'EBITDA',       weight: 2, color: 'rgba(59,130,246,0.15)', textColor: '#93c5fd' },
+      { word: 'margin',       weight: 2, color: 'rgba(245,158,11,0.2)',  textColor: '#fcd34d' },
+      { word: 'NIM',          weight: 2, color: 'rgba(59,130,246,0.15)', textColor: '#93c5fd' },
+      { word: 'liquidity',    weight: 2, color: 'rgba(245,158,11,0.2)',  textColor: '#fcd34d' },
+      { word: 'optimistic',   weight: 2, color: 'rgba(34,197,94,0.2)',   textColor: '#86efac' },
+      { word: 'bullish',      weight: 2, color: 'rgba(34,197,94,0.15)',  textColor: '#86efac' },
+    ],
+
+    sentimentTimeline: {
+      labels:   ['Mar 1','Mar 5','Mar 9','Mar 13','Mar 17','Mar 21','Mar 25','Mar 28'],
+      positive: [45, 55, 60, 52, 68, 72, 65, 71],
+      negative: [30, 28, 20, 35, 18, 15, 22, 18],
+    },
+
+    /* recentDocs comes from Firestore via db.js */
     recentDocs: [],
 
     /* Static UI data */
