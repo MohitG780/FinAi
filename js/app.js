@@ -196,13 +196,12 @@
     // ── Start real-time Firestore listeners ────────────────
     DB.listenToAnalyses((analyses) => {
       _liveAnalyses = analyses;
-      // Show user-submitted analyses first, then seeded fallback
-      const userFirst = [
-        ...analyses.filter(a => !a.isSeeded),
-        ...analyses.filter(a => a.isSeeded),
-      ];
-      renderDocList(userFirst.slice(0, 3));
-      renderNotifications(userFirst);
+      // Show ONLY user-uploaded analyses on dashboard (never seeded demo data)
+      const userAnalyses = analyses.filter(a => !a.isSeeded);
+      renderDocList(userAnalyses.slice(0, 3));
+      // Notifications show user analyses first, then seeded
+      const notifList = [...userAnalyses, ...analyses.filter(a => a.isSeeded)];
+      renderNotifications(notifList);
       if (state.currentPage === 'reports') renderReportsList(state.reportFilter);
     });
 
@@ -492,7 +491,7 @@
     });
 
     $('hero-analyse-btn').addEventListener('click', () => navigateTo('analyse'));
-    $('see-all-btn').addEventListener('click', () => openAllAnalysesSheet());
+    $('see-all-btn').addEventListener('click', () => navigateTo('reports'));
 
     // Notification bell → open bottom sheet
     $('notif-btn').addEventListener('click', (e) => {
@@ -572,6 +571,79 @@
       if (e.target === $('about-modal-overlay')) $('about-modal-overlay').classList.add('hidden');
     });
 
+    // ── Stat card tap navigation ─────────────────────────────
+    document.querySelectorAll('.stat-card[data-nav]').forEach(card => {
+      card.addEventListener('click', () => {
+        const nav = card.dataset.nav;
+        if (nav === 'reports')  navigateTo('reports');
+        if (nav === 'insights') navigateTo('insights');
+        if (nav === 'risks')    showRisksSheet();
+      });
+    });
+  }
+
+  /* ── Risk summary sheet ────────────────────────────────── */
+  function showRisksSheet() {
+    const overlay = $('doc-modal-overlay');
+    const content = $('doc-modal-content');
+    overlay.classList.remove('hidden');
+
+    // Collect all risk items from all user analyses
+    const allRisks = [];
+    _liveAnalyses.filter(a => !a.isSeeded).forEach(doc => {
+      (doc.risks || []).forEach(risk => {
+        allRisks.push({ ...risk, source: doc.name });
+      });
+    });
+
+    // Sort: high → medium → low
+    const order = { high: 0, medium: 1, low: 2 };
+    allRisks.sort((a, b) => (order[a.level] ?? 3) - (order[b.level] ?? 3));
+
+    const highCount   = allRisks.filter(r => r.level === 'high').length;
+    const mediumCount = allRisks.filter(r => r.level === 'medium').length;
+    const lowCount    = allRisks.filter(r => r.level === 'low').length;
+
+    content.innerHTML = `
+      <div class="modal-doc-header">
+        <p class="modal-doc-label">RISK ANALYSIS</p>
+        <h2 class="modal-doc-title">⚠️ Detected Risks</h2>
+        <div class="modal-doc-meta">
+          <span style="color:var(--accent-red);font-weight:700">${highCount} High</span>
+          <span>·</span>
+          <span style="color:var(--accent-amber);font-weight:700">${mediumCount} Medium</span>
+          <span>·</span>
+          <span style="color:var(--accent-blue);font-weight:700">${lowCount} Low</span>
+        </div>
+      </div>
+
+      ${allRisks.length === 0 ? `
+        <div style="text-align:center;padding:32px 0">
+          <div style="font-size:36px;margin-bottom:12px">✅</div>
+          <p style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px">No risks detected yet</p>
+          <p style="font-size:12px;color:var(--text-muted)">Analyse a document to see risk factors here</p>
+        </div>
+      ` : `
+        <div class="risk-list" style="margin-bottom:16px">
+          ${allRisks.map(risk => `
+            <div class="risk-item ${risk.level}">
+              <span class="risk-level-badge">${risk.level.toUpperCase()}</span>
+              <div style="flex:1">
+                <p class="risk-text">${risk.text}</p>
+                <p style="font-size:10px;color:var(--text-muted);margin-top:4px">Source: ${risk.source}</p>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `}
+
+      <button onclick="closeDocModal()" style="width:100%;margin-top:8px;padding:14px;background:var(--gradient-main);border-radius:var(--radius-md);font-size:14px;font-weight:700;color:white">
+        Close
+      </button>
+    `;
+
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeDocModal(); });
+    initSwipeToClose($('doc-modal'), closeDocModal);
   }
 
   /* ── Render dynamic notifications into the bottom sheet ──── */
@@ -723,7 +795,13 @@
   function renderDocList(docs) {
     const container = $('recent-docs');
     if (!docs || docs.length === 0) {
-      container.innerHTML = `<div style="text-align:center;padding:32px 16px;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:8px">📂</div><p style="font-size:13px">No analyses yet. Run your first analysis!</p></div>`;
+      container.innerHTML = `
+        <div style="text-align:center;padding:32px 16px">
+          <div style="font-size:36px;margin-bottom:12px">📂</div>
+          <p style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px">No analyses yet</p>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px">Analyse your first financial document to see results here</p>
+          <button onclick="navigateTo('analyse')" style="padding:10px 22px;background:var(--gradient-main);border-radius:99px;font-size:13px;font-weight:700;color:white;box-shadow:0 4px 14px rgba(59,130,246,.35)">Start Analysing →</button>
+        </div>`;
       return;
     }
     container.innerHTML = docs.map(doc => `
@@ -744,11 +822,15 @@
       </div>
     `).join('');
 
-    // Bind clicks
+    // Clicking a doc card navigates to Reports page and opens the detail
     container.querySelectorAll('.doc-card').forEach(card => {
       card.addEventListener('click', () => {
         const doc = docs.find(d => d.id === card.dataset.id);
-        if (doc) openDocModal(doc);
+        if (doc) {
+          navigateTo('reports');
+          // Small delay lets the page transition complete before opening modal
+          setTimeout(() => openDocModal(doc), 150);
+        }
       });
     });
   }
@@ -1356,6 +1438,8 @@
   window.closeDocModal = function () {
     $('doc-modal-overlay').classList.add('hidden');
   };
+
+  window.navigateTo = navigateTo;
 
   /* ══════════════════════════════════════════════════════════
      SWIPE TO CLOSE
