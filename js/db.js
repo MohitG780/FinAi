@@ -192,6 +192,3 @@ window.DB = {
   saveAnalysis,
   STATIC:           STATIC_DATA,
 };
-
-// Keep DATA alias for any legacy references in app.js
-window.DATA = STATIC_DATA;

@@ -40,34 +40,67 @@ async function getGravatarUrl(email) {
 }
 
 /* ── Listen to Firebase auth state changes ──────────────── */
-onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
+onAuthStateChanged(firebaseAuth, (firebaseUser) => {
   if (firebaseUser) {
-    try {
-      const snap = await getDoc(doc(firebaseDb, 'users', firebaseUser.uid));
-      _currentUser = snap.exists()
-        ? snap.data()
-        : {
-            id:       firebaseUser.uid,
-            fullName: firebaseUser.displayName || 'User',
-            email:    firebaseUser.email,
-            avatar:   await getGravatarUrl(firebaseUser.email),
-          };
-    } catch (e) {
-      console.warn('[AUTH] Could not load profile from Firestore:', e.message);
-      _currentUser = {
-        id:       firebaseUser.uid,
-        fullName: firebaseUser.displayName || 'User',
-        email:    firebaseUser.email,
-        avatar:   await getGravatarUrl(firebaseUser.email),
-      };
-    }
+    // Set _currentUser IMMEDIATELY from Firebase's cached auth data.
+    // This makes onReady() fire instantly without waiting for Firestore.
+    _currentUser = {
+      id:       firebaseUser.uid,
+      fullName: firebaseUser.displayName || 'User',
+      email:    firebaseUser.email,
+      avatar:   null, // will be patched below
+    };
+
+    // Signal ready right away (unblocks app boot)
+    _isReady = true;
+    _onReadyCallbacks.forEach(cb => cb(_currentUser));
+    _onReadyCallbacks = [];
+
+    // Silently upgrade profile from Firestore in background.
+    // This does NOT block the UI boot sequence.
+    (async () => {
+      try {
+        const avatar = await getGravatarUrl(firebaseUser.email);
+        _currentUser.avatar = avatar;
+
+        const timeoutPromise = new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 3000));
+        const snap = await Promise.race([
+          getDoc(doc(firebaseDb, 'users', firebaseUser.uid)),
+          timeoutPromise,
+        ]);
+        if (snap.exists()) {
+          Object.assign(_currentUser, snap.data());
+        }
+
+        // Patch avatar/name into the UI if already rendered
+        const avatarEls = [document.getElementById('avatar-chip'), document.getElementById('ud-avatar')];
+        const nameEl    = document.getElementById('ud-name');
+        const emailEl   = document.getElementById('ud-email');
+        avatarEls.forEach(el => {
+          if (!el) return;
+          if (_currentUser.avatar && _currentUser.avatar.startsWith('http')) {
+            el.textContent = '';
+            el.style.backgroundImage = `url(${_currentUser.avatar})`;
+            el.style.backgroundSize = 'cover';
+            el.style.backgroundPosition = 'center';
+          } else {
+            el.textContent = (_currentUser.fullName || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+          }
+        });
+        if (nameEl)  nameEl.textContent  = _currentUser.fullName;
+        if (emailEl) emailEl.textContent = _currentUser.email;
+      } catch (e) {
+        // non-critical — app already running
+        console.warn('[AUTH] Background profile load:', e.message);
+      }
+    })();
+
   } else {
     _currentUser = null;
+    _isReady = true;
+    _onReadyCallbacks.forEach(cb => cb(_currentUser));
+    _onReadyCallbacks = [];
   }
-
-  _isReady = true;
-  _onReadyCallbacks.forEach(cb => cb(_currentUser));
-  _onReadyCallbacks = [];
 });
 
 /* ── Public API ──────────────────────────────────────────── */
