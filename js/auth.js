@@ -91,7 +91,7 @@ window.AUTH = {
       const user   = cred.user;
       const avatar = await getGravatarUrl(email);
 
-      await updateProfile(user, { displayName: fullName.trim() });
+      updateProfile(user, { displayName: fullName.trim() }).catch(e => console.warn(e));
 
       const profile = {
         id:        user.uid,
@@ -100,7 +100,9 @@ window.AUTH = {
         avatar,
         createdAt: serverTimestamp(),
       };
-      await setDoc(doc(firebaseDb, 'users', user.uid), profile);
+      
+      // Do not await setDoc to avoid hanging the UI
+      setDoc(doc(firebaseDb, 'users', user.uid), profile).catch(e => console.warn(e));
 
       // Set immediately so launchApp() can read it
       _currentUser = { id: user.uid, fullName: fullName.trim(), email: email.toLowerCase().trim(), avatar };
@@ -118,8 +120,13 @@ window.AUTH = {
       const user = cred.user;
 
       // Load profile immediately so app has user data right away
+      // Race with timeout so it doesn't hang UI forever if Firestore is slow
       try {
-        const snap = await getDoc(doc(firebaseDb, 'users', user.uid));
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000));
+        const snap = await Promise.race([
+          getDoc(doc(firebaseDb, 'users', user.uid)),
+          timeoutPromise
+        ]);
         _currentUser = snap.exists()
           ? snap.data()
           : { id: user.uid, fullName: user.displayName || 'User', email: user.email,
