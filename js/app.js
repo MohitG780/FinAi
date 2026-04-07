@@ -196,12 +196,12 @@
     // ── Start real-time Firestore listeners ────────────────
     DB.listenToAnalyses((analyses) => {
       _liveAnalyses = analyses;
-      // Show ONLY user-uploaded analyses on dashboard (never seeded demo data)
       const userAnalyses = analyses.filter(a => !a.isSeeded);
       renderDocList(userAnalyses.slice(0, 3));
-      // Notifications show user analyses first, then seeded
       const notifList = [...userAnalyses, ...analyses.filter(a => a.isSeeded)];
       renderNotifications(notifList);
+      // Update real-time stat cards immediately
+      updateRealTimeStats(userAnalyses);
       if (state.currentPage === 'reports') renderReportsList(state.reportFilter);
     });
 
@@ -319,22 +319,6 @@
     if (_aiScoreHistory.length > 18) _aiScoreHistory.shift();
     Charts.drawMiniChart('mini-chart', _aiScoreHistory);
 
-    // Update description from live Firestore analyses count
-    const heroDesc = document.querySelector('.hero-card-desc');
-    const risksToday = Math.floor(Math.random() * 18) + 5;
-    const docsAnalysed = _liveAnalyses.length || (18 + Math.floor(Math.random() * 6));
-    if (heroDesc) heroDesc.textContent = `${docsAnalysed} document${docsAnalysed !== 1 ? 's' : ''} analysed · ${risksToday} risks flagged`;
-
-    // Update stat cards
-    const statVals = document.querySelectorAll('.stat-val');
-    if (statVals[0]) {
-      const positiveCount = mktState.stocks.filter(s => s.direction === 'up').length;
-      const totalStocks = mktState.stocks.length || 1;
-      statVals[0].textContent = docsAnalysed;
-      statVals[1].textContent = Math.round((positiveCount / totalStocks) * 100) + '%';
-      statVals[2].textContent = risksToday;
-    }
-
     // Update sector sentiment with market-linked changes
     const sectorCards = document.querySelectorAll('.sector-card');
     if (sectorCards.length > 0) {
@@ -353,6 +337,27 @@
         const barFill = sectorCards[i].querySelector('.sector-bar-fill');
         if (barFill) barFill.style.width = newFill + '%';
       });
+    }
+  }
+
+  /* ── Real-time stat cards from Firestore ─────────────── */
+  function updateRealTimeStats(userAnalyses) {
+    const total      = userAnalyses.length;
+    const positive   = userAnalyses.filter(a => a.sentiment === 'positive').length;
+    const positivePct = total > 0 ? Math.round((positive / total) * 100) : 0;
+    const riskCount  = userAnalyses.reduce((sum, a) => sum + ((a.risks || []).length), 0);
+
+    const statVals = document.querySelectorAll('.stat-val');
+    if (statVals[0]) statVals[0].textContent = total;
+    if (statVals[1]) statVals[1].textContent = positivePct + '%';
+    if (statVals[2]) statVals[2].textContent = riskCount;
+
+    // Also update hero card description with real counts
+    const heroDesc = document.querySelector('.hero-card-desc');
+    if (heroDesc) {
+      heroDesc.textContent = total > 0
+        ? `${total} document${total !== 1 ? 's' : ''} analysed · ${riskCount} risk${riskCount !== 1 ? 's' : ''} flagged`
+        : 'Upload and analyse financial documents to get started';
     }
   }
 
