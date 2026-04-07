@@ -249,43 +249,43 @@
     initMarketData();
   }
 
-    /* ── Live Dashboard Stats (updates every 10s) ────────── */
+  /* ══════════════════════════════════════════════════════════
+     LIVE MARKET DATA
+  ══════════════════════════════════════════════════════════ */
+  let refreshCountdown = 10;
+  let countdownTimer = null;
+
+  function initMarketData() {
+    window.addEventListener('market-data-updated', (e) => {
+      renderMarketUI(e.detail);
+    });
+    MARKET.startAutoRefresh();
+    startCountdown();
+  }
+
+  function startCountdown() {
+    refreshCountdown = 10;
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+      refreshCountdown--;
+      if (refreshCountdown <= 0) refreshCountdown = 10;
+      const timerEl = $('refresh-timer');
+      if (timerEl) timerEl.textContent = `Refreshes in ${refreshCountdown}s`;
+    }, 1000);
+  }
+
+  function renderMarketUI(mktState) {
+    renderTicker(mktState);
+    renderIndices(mktState);
+    renderStockWatchlist(mktState);
+    updateMarketStatus(mktState);
+    updateLiveDashboardStats(mktState);
+    updateLiveInsightsAndReports(mktState);
+    refreshCountdown = 10;
+  }
+
+  /* ── Live Dashboard Stats (sector updates only) ────────── */
   function updateLiveDashboardStats(mktState) {
-    // Sector sentiment with market-linked changes
-    const sectorCards = document.querySelectorAll('.sector-card');
-    if (sectorCards.length > 0) {
-      DATA.sectors.forEach((sector, i) => {
-        if (!sectorCards[i]) return;
-        const baseFill = parseInt(sector.fill);
-        const variation = (Math.random() - 0.5) * 6;
-        const newFill = Math.max(5, Math.min(95, Math.round(baseFill + variation)));
-        const direction = newFill > 50 ? 'up' : newFill < 40 ? 'down' : 'flat';
-        const sectorVal = sectorCards[i].querySelector('.sector-value');
-        if (sectorVal) {
-          const sign = direction === 'up' ? '+' : direction === 'down' ? '-' : '~';
-          sectorVal.textContent = `${sign}${newFill}%`;
-          sectorVal.className = `sector-value ${direction}`;
-        }
-        const barFill = sectorCards[i].querySelector('.sector-bar-fill');
-        if (barFill) barFill.style.width = newFill + '%';
-      });
-    }
-  }score-badge negative';
-          scoreBadge.textContent = `▼ ${Math.abs(diff)}pts`;
-        } else {
-          scoreBadge.className = 'hero-score-badge neutral-badge';
-          scoreBadge.textContent = `● 0pts`;
-        }
-      }
-    }
-    _prevAiScore = aiScore;
-
-    // Push to history and redraw sparkline
-    _aiScoreHistory.push(aiScore);
-    if (_aiScoreHistory.length > 18) _aiScoreHistory.shift();
-    Charts.drawMiniChart('mini-chart', _aiScoreHistory);
-
-    // Update sector sentiment with market-linked changes
     const sectorCards = document.querySelectorAll('.sector-card');
     if (sectorCards.length > 0) {
       DATA.sectors.forEach((sector, i) => {
@@ -1311,10 +1311,15 @@
 
   function renderReportsList(filter) {
     const container = $('reports-list');
-    const src = _liveAnalyses.length > 0 ? _liveAnalyses : [];
+    const SEEDED_NAMES = new Set([
+      'Reliance Industries AR 2024',
+      'HDFC Bank Q3 Results',
+      'Adani Ports Risk Disclosure',
+    ]);
+    const userDocs = _liveAnalyses.filter(a => !a.isSeeded && !SEEDED_NAMES.has(a.name));
     const docs = filter === 'all'
-      ? src
-      : src.filter(d => d.sentiment === filter);
+      ? userDocs
+      : userDocs.filter(d => d.sentiment === filter);
 
     if (docs.length === 0) {
       container.innerHTML = `
