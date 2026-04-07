@@ -129,13 +129,13 @@ input,textarea{font-family:inherit}
 .notif-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;background:var(--accent-red);border-radius:50%;border:1.5px solid var(--bg-primary)}
 
 /* === PAGES === */
-.page-container{padding-top:calc(var(--topbar-height) + 16px);padding-bottom:calc(var(--nav-height) + 24px);min-height:100vh}
+.page-container{padding-top:calc(var(--topbar-height) + 8px);padding-bottom:calc(var(--nav-height) + 24px);min-height:100vh}
 .page{display:none;padding:0 16px;animation:page-in .35s ease}
 .page.active{display:block}
 @keyframes page-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
 /* === DASHBOARD === */
-.greeting-section{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-top:4px}
+.greeting-section{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-top:0}
 .greeting-time{font-size:13px;color:var(--text-secondary)}
 .greeting-name{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700}
 .market-badge{display:flex;align-items:center;gap:6px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);border-radius:99px;padding:6px 12px;font-size:11px;color:var(--accent-green);font-weight:600}
