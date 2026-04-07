@@ -138,3 +138,5 @@ const Charts = {
     });
   }
 };
+
+window.Charts = Charts;
