@@ -196,11 +196,18 @@
     // ── Start real-time Firestore listeners ────────────────
     DB.listenToAnalyses((analyses) => {
       _liveAnalyses = analyses;
-      const userAnalyses = analyses.filter(a => !a.isSeeded);
+      // Known seeded names — exclude regardless of isSeeded flag (handles legacy data)
+      const SEEDED_NAMES = new Set([
+        'Reliance Industries AR 2024',
+        'HDFC Bank Q3 Results',
+        'Adani Ports Risk Disclosure',
+      ]);
+      const userAnalyses = analyses.filter(a =>
+        !a.isSeeded && !SEEDED_NAMES.has(a.name)
+      );
       renderDocList(userAnalyses.slice(0, 3));
-      const notifList = [...userAnalyses, ...analyses.filter(a => a.isSeeded)];
+      const notifList = [...userAnalyses, ...analyses.filter(a => a.isSeeded || SEEDED_NAMES.has(a.name))];
       renderNotifications(notifList);
-      // Update real-time stat cards immediately
       updateRealTimeStats(userAnalyses);
       if (state.currentPage === 'reports') renderReportsList(state.reportFilter);
     });
