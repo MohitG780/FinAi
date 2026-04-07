@@ -14,6 +14,7 @@ import {
   deleteDoc,
   onSnapshot,
   query,
+  where,
   orderBy,
   limit,
   serverTimestamp,
@@ -73,8 +74,8 @@ async function cleanupOldSeeds() {
     const snap = await getDocs(collection(firebaseDb, 'analyses'));
     const toDelete = snap.docs.filter(d => {
       const data = d.data();
-      // Delete if it's a known seed name WITHOUT the isSeeded flag (old format)
-      return SEEDED_NAMES.has(data.name) && data.isSeeded !== true;
+      // Delete if it's a known seed name AND lacks the system userId flag
+      return SEEDED_NAMES.has(data.name) && data.userId !== 'system';
     });
     for (const d of toDelete) {
       await deleteDoc(doc(firebaseDb, 'analyses', d.id));
@@ -90,9 +91,9 @@ async function seedIfEmpty() {
   // First, remove any old seeded docs that don't have the isSeeded flag
   await cleanupOldSeeds();
 
-  // Check if already seeded (only non-flagged user docs should remain)
+  // Check if already seeded with correctly-tagged 'system' documents
   const snap = await getDocs(collection(firebaseDb, 'analyses'));
-  const hasSeed = snap.docs.some(d => d.data().isSeeded === true);
+  const hasSeed = snap.docs.some(d => d.data().userId === 'system');
   if (hasSeed) return; // Already seeded cleanly
 
   console.log('[FinAI] Seeding Firestore with initial data…');
@@ -103,6 +104,7 @@ async function seedIfEmpty() {
       ...docData,
       createdAt: serverTimestamp(),
       isSeeded: true,
+      userId: 'system',
     });
   }
 
@@ -118,11 +120,23 @@ async function seedIfEmpty() {
 }
 
 /* ─── Real-time listener: analyses collection ────────────── */
-function listenToAnalyses(callback) {
-  const q = query(collection(firebaseDb, 'analyses'), orderBy('createdAt', 'desc'), limit(20));
+function listenToAnalyses(userId, callback) {
+  // Only show documents that belong to the current user OR have the 'system' tag (seeded).
+  // Using the 'in' operator ensures we can orderBy('createdAt') without complex composite indexes.
+  const userList = [userId || 'anonymous', 'system'];
+  const q = query(
+    collection(firebaseDb, 'analyses'),
+    where('userId', 'in', userList),
+    orderBy('createdAt', 'desc'),
+    limit(20)
+  );
   return onSnapshot(q, (snapshot) => {
     const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     callback(docs);
+  }, (err) => {
+    console.error('[DB] listenToAnalyses error:', err);
+    // Fallout: if query fails (likely index missing), return empty list so app doesn't hang
+    callback([]);
   });
 }
 
