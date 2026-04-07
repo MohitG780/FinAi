@@ -195,7 +195,8 @@
     updateGreeting();
 
     // ── Start real-time Firestore listeners ────────────────
-    DB.listenToAnalyses((analyses) => {
+    const currentUser = AUTH.getUser();
+    DB.listenToAnalyses(currentUser ? currentUser.id : 'anonymous', (analyses) => {
       _liveAnalyses = analyses;
       // Known seeded names — exclude regardless of isSeeded flag (handles legacy data)
       const SEEDED_NAMES = new Set([
