@@ -76,6 +76,8 @@ onAuthStateChanged(firebaseAuth, (firebaseUser) => {
         const avatarEls = [document.getElementById('avatar-chip'), document.getElementById('ud-avatar')];
         const nameEl    = document.getElementById('ud-name');
         const emailEl   = document.getElementById('ud-email');
+        const greetEl   = document.getElementById('greeting-name');
+
         avatarEls.forEach(el => {
           if (!el) return;
           if (_currentUser.avatar && _currentUser.avatar.startsWith('http')) {
@@ -85,10 +87,13 @@ onAuthStateChanged(firebaseAuth, (firebaseUser) => {
             el.style.backgroundPosition = 'center';
           } else {
             el.textContent = (_currentUser.fullName || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            el.style.backgroundImage = 'none'; // Clear if no avatar
           }
         });
+
         if (nameEl)  nameEl.textContent  = _currentUser.fullName;
         if (emailEl) emailEl.textContent = _currentUser.email;
+        if (greetEl) greetEl.textContent = _currentUser.fullName;
       } catch (e) {
         // non-critical — app already running
         console.warn('[AUTH] Background profile load:', e.message);
