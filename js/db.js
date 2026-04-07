@@ -11,6 +11,7 @@ import {
   addDoc,
   setDoc,
   getDocs,
+  deleteDoc,
   onSnapshot,
   query,
   orderBy,
@@ -59,11 +60,40 @@ const SEED_COMPANIES = [
   { name: "Reliance Ind.", ticker: "RELIANCE",   score: 78, cls: "positive", barColor: "#22c55e" },
 ];
 
+/* ─── Known seeded document names ──────────────────────────── */
+const SEEDED_NAMES = new Set([
+  'Reliance Industries AR 2024',
+  'HDFC Bank Q3 Results',
+  'Adani Ports Risk Disclosure',
+]);
+
+/* ─── Remove old seeded docs that lack the isSeeded flag ────── */
+async function cleanupOldSeeds() {
+  try {
+    const snap = await getDocs(collection(firebaseDb, 'analyses'));
+    const toDelete = snap.docs.filter(d => {
+      const data = d.data();
+      // Delete if it's a known seed name WITHOUT the isSeeded flag (old format)
+      return SEEDED_NAMES.has(data.name) && data.isSeeded !== true;
+    });
+    for (const d of toDelete) {
+      await deleteDoc(doc(firebaseDb, 'analyses', d.id));
+      console.log('[FinAI] Removed legacy seed doc:', d.data().name);
+    }
+  } catch (e) {
+    console.warn('[FinAI] cleanupOldSeeds error:', e);
+  }
+}
+
 /* ─── Seed the database on first launch ─────────────────── */
 async function seedIfEmpty() {
-  // Check if already seeded
+  // First, remove any old seeded docs that don't have the isSeeded flag
+  await cleanupOldSeeds();
+
+  // Check if already seeded (only non-flagged user docs should remain)
   const snap = await getDocs(collection(firebaseDb, 'analyses'));
-  if (!snap.empty) return; // Already has data, skip seeding
+  const hasSeed = snap.docs.some(d => d.data().isSeeded === true);
+  if (hasSeed) return; // Already seeded cleanly
 
   console.log('[FinAI] Seeding Firestore with initial data…');
 
