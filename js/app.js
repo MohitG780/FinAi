@@ -185,6 +185,7 @@
   // Live Firestore data holders
   let _liveAnalyses = [];
   let _liveCompanies = [];
+  let _notifList = []; // Real-time user uploads for notification feed
 
   // AI Score history for real-time sparkline & diff badge
   let _prevAiScore = null;
@@ -206,8 +207,8 @@
         !a.isSeeded && !SEEDED_NAMES.has(a.name)
       );
       renderDocList(userAnalyses.slice(0, 3));
-      const notifList = [...userAnalyses, ...analyses.filter(a => a.isSeeded || SEEDED_NAMES.has(a.name))];
-      renderNotifications(notifList);
+      _notifList = userAnalyses; // ONLY show real user uploads here, no seeded data
+      renderNotifications(_notifList);
       updateRealTimeStats(userAnalyses);
       if (state.currentPage === 'reports') renderReportsList(state.reportFilter);
     });
@@ -233,6 +234,8 @@
       if (state.currentPage === 'insights') {
         Charts.drawSentimentChart('sentiment-chart', DATA.sentimentTimeline);
       }
+      // Every market refresh, re-build notifications to include new market alerts
+      renderNotifications(_notifList);
     });
 
     renderDashboard();
@@ -646,7 +649,8 @@
     const list = $('notif-list');
     if (!list) return;
 
-    const items = analyses.slice(0, 5).map((doc, i) => {
+    // 1) User analysis notifications
+    const analysisItems = analyses.slice(0, 4).map((doc, i) => {
       const isUnread = i < 2;
       const riskCount = (doc.risks || []).filter(r => r.level === 'high').length;
       const text = riskCount > 0
@@ -668,23 +672,26 @@
         </div>`;
     });
 
-    items.push(`
-      <div class="notif-item">
-        <div class="notif-dot-left" style="opacity:0"></div>
-        <div class="notif-content">
-          <p class="notif-text">FinBERT NLP engine ready — v2.1</p>
-          <p class="notif-time">System</p>
-        </div>
-        <span class="notif-badge neutral">Info</span>
-      </div>`);
+    // 2) Live market notifications from real-time data
+    const marketNotifs = buildMarketNotifications();
 
-    list.innerHTML = items.join('');
+    const allItems = [...analysisItems, ...marketNotifs];
+
+    if (allItems.length === 0) {
+      list.innerHTML = `
+        <div style="text-align:center;padding:24px 0;color:var(--text-muted)">
+          <div style="font-size:28px;margin-bottom:8px">🔕</div>
+          <p style="font-size:13px">No notifications yet</p>
+        </div>`;
+    } else {
+      list.innerHTML = allItems.join('');
+    }
 
     // Bell dot
     const dot = $('notif-btn') && $('notif-btn').querySelector('.notif-dot');
-    if (dot) dot.style.display = analyses.length > 0 ? 'block' : 'none';
+    if (dot) dot.style.display = allItems.length > 0 ? 'block' : 'none';
 
-    // Tap a notification → close sheet + open doc modal
+    // Tap an analysis notification → close sheet + open doc modal
     list.querySelectorAll('.notif-item[data-id]').forEach(item => {
       item.addEventListener('click', e => {
         e.stopPropagation();
@@ -695,6 +702,64 @@
         }
       });
     });
+  }
+
+  /* ── Build market alert notifications from live data ──────── */
+  function buildMarketNotifications() {
+    const mkt = window.MARKET;
+    if (!mkt || !mkt.getState) return [];
+
+    const state = mkt.getState();
+    if (!state || !state.stocks) return [];
+
+    const notifs = [];
+    const now = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+    // Big movers (stocks with >2% change)
+    const bigGainers = state.stocks.filter(s => s.changePct > 2);
+    const bigLosers = state.stocks.filter(s => s.changePct < -2);
+
+    bigGainers.forEach(s => {
+      notifs.push(`
+        <div class="notif-item unread" data-type="market">
+          <div class="notif-dot-left"></div>
+          <div class="notif-content">
+            <p class="notif-text">📈 ${s.name} surging +${s.changePct.toFixed(1)}%</p>
+            <p class="notif-time">Market · ${now}</p>
+          </div>
+          <span class="notif-badge positive">Rally</span>
+        </div>`);
+    });
+
+    bigLosers.forEach(s => {
+      notifs.push(`
+        <div class="notif-item unread" data-type="market">
+          <div class="notif-dot-left"></div>
+          <div class="notif-content">
+            <p class="notif-text">📉 ${s.name} dropping ${s.changePct.toFixed(1)}%</p>
+            <p class="notif-time">Market · ${now}</p>
+          </div>
+          <span class="notif-badge negative">Alert</span>
+        </div>`);
+    });
+
+    // Index alerts
+    (state.indices || []).forEach(idx => {
+      if (Math.abs(idx.changePct) > 1.5) {
+        const dir = idx.changePct > 0;
+        notifs.push(`
+          <div class="notif-item" data-type="market">
+            <div class="notif-dot-left" style="opacity:0"></div>
+            <div class="notif-content">
+              <p class="notif-text">${dir ? '🟢' : '🔴'} ${idx.name} ${dir ? 'up' : 'down'} ${Math.abs(idx.changePct).toFixed(1)}%</p>
+              <p class="notif-time">Index · ${now}</p>
+            </div>
+            <span class="notif-badge ${dir ? 'positive' : 'negative'}">${dir ? '+' : ''}${idx.changePct.toFixed(1)}%</span>
+          </div>`);
+      }
+    });
+
+    return notifs.slice(0, 4); // Cap at 4 market alerts
   }
 
   /* ── Show all analyses in a bottom sheet (same page) ──────── */
