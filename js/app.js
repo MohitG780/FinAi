@@ -249,69 +249,28 @@
     initMarketData();
   }
 
-  /* ══════════════════════════════════════════════════════════
-     LIVE MARKET DATA
-  ══════════════════════════════════════════════════════════ */
-  let refreshCountdown = 10;
-  let countdownTimer = null;
-
-  function initMarketData() {
-    // Listen for market data updates
-    window.addEventListener('market-data-updated', (e) => {
-      renderMarketUI(e.detail);
-    });
-
-    // Start auto-refresh
-    MARKET.startAutoRefresh();
-
-    // Start countdown timer
-    startCountdown();
-  }
-
-  function startCountdown() {
-    refreshCountdown = 10;
-    if (countdownTimer) clearInterval(countdownTimer);
-    countdownTimer = setInterval(() => {
-      refreshCountdown--;
-      if (refreshCountdown <= 0) refreshCountdown = 10;
-      const timerEl = $('refresh-timer');
-      if (timerEl) timerEl.textContent = `Refreshes in ${refreshCountdown}s`;
-    }, 1000);
-  }
-
-  function renderMarketUI(mktState) {
-    renderTicker(mktState);
-    renderIndices(mktState);
-    renderStockWatchlist(mktState);
-    updateMarketStatus(mktState);
-    updateLiveDashboardStats(mktState);
-    updateLiveInsightsAndReports(mktState);
-
-    // Reset countdown
-    refreshCountdown = 10;
-  }
-
-  /* ── Live Dashboard Stats (updates every 10s) ──────────── */
+    /* ── Live Dashboard Stats (updates every 10s) ────────── */
   function updateLiveDashboardStats(mktState) {
-    // Compute AI Readiness Score from live market
-    const avgChange = [...mktState.indices, ...mktState.stocks]
-      .reduce((sum, s) => sum + s.changePct, 0) / (mktState.indices.length + mktState.stocks.length);
-    const aiScore = Math.max(30, Math.min(99, Math.round(75 + avgChange * 5 + (Math.random() - 0.5) * 4)));
-
-    // Update displayed score
-    const heroScore = document.querySelector('.hero-score');
-    if (heroScore) heroScore.textContent = aiScore;
-
-    // Show REAL change vs previous reading
-    const scoreBadge = document.querySelector('.hero-score-badge');
-    if (scoreBadge) {
-      if (_prevAiScore !== null) {
-        const diff = aiScore - _prevAiScore;
-        if (diff > 0) {
-          scoreBadge.className = 'hero-score-badge positive';
-          scoreBadge.textContent = `▲ ${diff}pts`;
-        } else if (diff < 0) {
-          scoreBadge.className = 'hero-score-badge negative';
+    // Sector sentiment with market-linked changes
+    const sectorCards = document.querySelectorAll('.sector-card');
+    if (sectorCards.length > 0) {
+      DATA.sectors.forEach((sector, i) => {
+        if (!sectorCards[i]) return;
+        const baseFill = parseInt(sector.fill);
+        const variation = (Math.random() - 0.5) * 6;
+        const newFill = Math.max(5, Math.min(95, Math.round(baseFill + variation)));
+        const direction = newFill > 50 ? 'up' : newFill < 40 ? 'down' : 'flat';
+        const sectorVal = sectorCards[i].querySelector('.sector-value');
+        if (sectorVal) {
+          const sign = direction === 'up' ? '+' : direction === 'down' ? '-' : '~';
+          sectorVal.textContent = `${sign}${newFill}%`;
+          sectorVal.className = `sector-value ${direction}`;
+        }
+        const barFill = sectorCards[i].querySelector('.sector-bar-fill');
+        if (barFill) barFill.style.width = newFill + '%';
+      });
+    }
+  }score-badge negative';
           scoreBadge.textContent = `▼ ${Math.abs(diff)}pts`;
         } else {
           scoreBadge.className = 'hero-score-badge neutral-badge';
@@ -347,25 +306,66 @@
     }
   }
 
-  /* ── Real-time stat cards from Firestore ─────────────── */
+  /* ── Real-time stat cards + AI Score from Firestore ───── */
   function updateRealTimeStats(userAnalyses) {
     const total      = userAnalyses.length;
     const positive   = userAnalyses.filter(a => a.sentiment === 'positive').length;
     const positivePct = total > 0 ? Math.round((positive / total) * 100) : 0;
     const riskCount  = userAnalyses.reduce((sum, a) => sum + ((a.risks || []).length), 0);
 
+    // Update stat cards
     const statVals = document.querySelectorAll('.stat-val');
     if (statVals[0]) statVals[0].textContent = total;
     if (statVals[1]) statVals[1].textContent = positivePct + '%';
     if (statVals[2]) statVals[2].textContent = riskCount;
 
-    // Also update hero card description with real counts
+    // Hero card description
     const heroDesc = document.querySelector('.hero-card-desc');
     if (heroDesc) {
       heroDesc.textContent = total > 0
         ? `${total} document${total !== 1 ? 's' : ''} analysed · ${riskCount} risk${riskCount !== 1 ? 's' : ''} flagged`
         : 'Upload and analyse financial documents to get started';
     }
+
+    // AI Readiness Score = average sentiment score of all user analyses
+    const aiScore = total > 0
+      ? Math.round(userAnalyses.reduce((sum, a) => sum + (a.sentimentScore || 0), 0) / total)
+      : 0;
+
+    const heroScore = document.querySelector('.hero-score');
+    if (heroScore) heroScore.textContent = total > 0 ? aiScore : '--';
+
+    // Show change vs previous reading
+    const scoreBadge = document.querySelector('.hero-score-badge');
+    if (scoreBadge) {
+      if (total === 0) {
+        scoreBadge.className = 'hero-score-badge neutral-badge';
+        scoreBadge.textContent = '● awaiting data';
+      } else if (_prevAiScore !== null && _prevAiScore !== 0) {
+        const diff = aiScore - _prevAiScore;
+        if (diff > 0) {
+          scoreBadge.className = 'hero-score-badge positive';
+          scoreBadge.textContent = `▲ ${diff}pts`;
+        } else if (diff < 0) {
+          scoreBadge.className = 'hero-score-badge negative';
+          scoreBadge.textContent = `▼ ${Math.abs(diff)}pts`;
+        } else {
+          scoreBadge.className = 'hero-score-badge neutral-badge';
+          scoreBadge.textContent = '● 0pts';
+        }
+      } else {
+        scoreBadge.className = 'hero-score-badge positive';
+        scoreBadge.textContent = `▲ ${aiScore}pts`;
+      }
+    }
+    _prevAiScore = aiScore;
+
+    // Update sparkline with real data
+    if (total > 0) {
+      _aiScoreHistory.push(aiScore);
+      if (_aiScoreHistory.length > 18) _aiScoreHistory.shift();
+    }
+    Charts.drawMiniChart('mini-chart', _aiScoreHistory.length > 0 ? _aiScoreHistory : [0]);
   }
 
   /* ── Live Insights & Reports (updates driven by Firestore) ─ */
