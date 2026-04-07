@@ -188,7 +188,7 @@
 
   // AI Score history for real-time sparkline & diff badge
   let _prevAiScore = null;
-  const _aiScoreHistory = [42,50,55,52,60,68,71,74,72,78,80,82,84];
+  const _aiScoreHistory = [];
 
   function initApp() {
     updateGreeting();
@@ -242,8 +242,7 @@
     bindNavigation();
     bindAnalysePage();
     bindReportsPage();
-    Charts.drawMiniChart('mini-chart');
-    setTimeout(animateStats, 400);
+    Charts.drawMiniChart('mini-chart', [0]);
 
     // Start live market data (first market event fires data-refreshed ~ 1s)
     initMarketData();
@@ -472,23 +471,7 @@
     }
   }
 
-  function animateStats() {
-    const targets = [
-      { el: document.querySelectorAll('.stat-val')[0], end: 24, suffix: '' },
-      { el: document.querySelectorAll('.stat-val')[1], end: 68, suffix: '%' },
-      { el: document.querySelectorAll('.stat-val')[2], end: 47, suffix: '' },
-    ];
-    targets.forEach(({ el, end, suffix }) => {
-      if (!el) return;
-      let current = 0;
-      const step = Math.ceil(end / 30);
-      const timer = setInterval(() => {
-        current = Math.min(current + step, end);
-        el.textContent = current + suffix;
-        if (current >= end) clearInterval(timer);
-      }, 40);
-    });
-  }
+  // animateStats removed — stat cards are driven purely by Firestore data
 
   /* ══════════════════════════════════════════════════════════
      NAVIGATION
@@ -600,9 +583,9 @@
     const content = $('doc-modal-content');
     overlay.classList.remove('hidden');
 
-    // Collect all risk items from all user analyses
+    // Collect all risk items from ALL analyses
     const allRisks = [];
-    _liveAnalyses.filter(a => !a.isSeeded).forEach(doc => {
+    _liveAnalyses.forEach(doc => {
       (doc.risks || []).forEach(risk => {
         allRisks.push({ ...risk, source: doc.name });
       });
