@@ -571,6 +571,10 @@ canvas{display:block;width:100%!important}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--bg-card-2);border-radius:99px}
 
+/* === NOTIFICATION SHEET HEADER === */
+.notif-sheet-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border-color)}
+.notif-sheet-title{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--text-primary)}
+
 /* === NOTIFICATION DROPDOWN === */
 .notif-dropdown{position:fixed;top:calc(var(--topbar-height) + 8px);right:calc(50% - 215px + 16px);width:280px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:var(--radius-md);z-index:150;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:dropdown-in .2s cubic-bezier(.34,1.56,.64,1)}
 @keyframes dropdown-in{from{opacity:0;transform:scale(.95) translateY(-8px)}to{opacity:1;transform:scale(1) translateY(0)}}

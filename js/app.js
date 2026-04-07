@@ -196,8 +196,13 @@
     // ── Start real-time Firestore listeners ────────────────
     DB.listenToAnalyses((analyses) => {
       _liveAnalyses = analyses;
-      renderDocList(_liveAnalyses.slice(0, 3));
-      renderNotifications(_liveAnalyses);
+      // Show user-submitted analyses first, then seeded fallback
+      const userFirst = [
+        ...analyses.filter(a => !a.isSeeded),
+        ...analyses.filter(a => a.isSeeded),
+      ];
+      renderDocList(userFirst.slice(0, 3));
+      renderNotifications(userFirst);
       if (state.currentPage === 'reports') renderReportsList(state.reportFilter);
     });
 
@@ -567,23 +572,12 @@
       if (e.target === $('about-modal-overlay')) $('about-modal-overlay').classList.add('hidden');
     });
 
-    // Notification clear
-    $('notif-clear').addEventListener('click', (e) => {
-      e.stopPropagation();
-      $$('.notif-dot-left').forEach(d => d.style.opacity = '0');
-      $$('.notif-item').forEach(i => i.classList.remove('unread'));
-      $('notif-btn').querySelector('.notif-dot').style.display = 'none';
-      $('notif-dropdown').classList.add('hidden');
-      showToast('✓', 'Notifications cleared');
-    });
   }
 
-  /* ── Render dynamic notifications from live Firestore data ─── */
+  /* ── Render dynamic notifications into the bottom sheet ──── */
   function renderNotifications(analyses) {
-    const dropdown = $('notif-dropdown');
-    if (!dropdown) return;
-
-    const header = dropdown.querySelector('.notif-dropdown-header');
+    const list = $('notif-list');
+    if (!list) return;
 
     const items = analyses.slice(0, 5).map((doc, i) => {
       const isUnread = i < 2;
@@ -596,7 +590,6 @@
         : doc.sentiment === 'negative'
         ? `<span class="notif-badge negative">Risk</span>`
         : `<span class="notif-badge neutral">${doc.sentimentScore}</span>`;
-
       return `
         <div class="notif-item ${isUnread ? 'unread' : ''}" data-id="${doc.id}" style="cursor:pointer">
           <div class="notif-dot-left" style="${isUnread ? '' : 'opacity:0'}"></div>
@@ -618,35 +611,80 @@
         <span class="notif-badge neutral">Info</span>
       </div>`);
 
-    dropdown.innerHTML = '';
-    if (header) dropdown.appendChild(header);
-    dropdown.insertAdjacentHTML('beforeend', items.join(''));
+    list.innerHTML = items.join('');
 
-    // Show/hide the bell dot
+    // Bell dot
     const dot = $('notif-btn') && $('notif-btn').querySelector('.notif-dot');
     if (dot) dot.style.display = analyses.length > 0 ? 'block' : 'none';
 
-    // Clicking a notif opens its detail modal
-    dropdown.querySelectorAll('.notif-item[data-id]').forEach(item => {
+    // Tap a notification → close sheet + open doc modal
+    list.querySelectorAll('.notif-item[data-id]').forEach(item => {
       item.addEventListener('click', e => {
         e.stopPropagation();
         const doc = _liveAnalyses.find(d => d.id === item.dataset.id);
-        if (doc) { $('notif-dropdown').classList.add('hidden'); openDocModal(doc); }
+        if (doc) {
+          $('notif-overlay').classList.add('hidden');
+          openDocModal(doc);
+        }
+      });
+    });
+  }
+
+  /* ── Show all analyses in a bottom sheet (same page) ──────── */
+  function openAllAnalysesSheet() {
+    const overlay = $('doc-modal-overlay');
+    const content = $('doc-modal-content');
+    overlay.classList.remove('hidden');
+
+    const userFirst = [
+      ..._liveAnalyses.filter(a => !a.isSeeded),
+      ..._liveAnalyses.filter(a => a.isSeeded),
+    ];
+
+    content.innerHTML = `
+      <div class="modal-doc-header">
+        <p class="modal-doc-label">ALL ANALYSES</p>
+        <h2 class="modal-doc-title">Recent Reports</h2>
+        <div class="modal-doc-meta">
+          <span>${userFirst.length} document${userFirst.length !== 1 ? 's' : ''}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;padding-bottom:8px">
+        ${userFirst.map(doc => {
+          const cls = doc.sentiment || 'neutral';
+          return `
+            <div class="doc-card ${cls}" data-id="${doc.id}" style="cursor:pointer">
+              <div class="doc-icon ${cls}">${doc.icon || '📊'}</div>
+              <div class="doc-info">
+                <p class="doc-name">${doc.name}</p>
+                <div class="doc-meta">
+                  <span>${doc.type || 'Report'}</span>
+                  <span>·</span>
+                  <span>${doc.date || ''}</span>
+                </div>
+              </div>
+              <div class="doc-right">
+                <div class="sentiment-badge ${cls}">${capitalize(cls)}</div>
+                <p class="sentiment-score">${doc.sentimentScore}/100</p>
+              </div>
+            </div>`;
+        }).join('')}
+        ${userFirst.length === 0 ? '<p style="color:var(--text-muted);font-size:13px;text-align:center;padding:24px 0">No analyses yet</p>' : ''}
+      </div>
+      <button onclick="closeDocModal()" style="width:100%;margin-top:8px;padding:14px;background:var(--gradient-main);border-radius:var(--radius-md);font-size:14px;font-weight:700;color:white">
+        Close
+      </button>
+    `;
+
+    content.querySelectorAll('.doc-card[data-id]').forEach(card => {
+      card.addEventListener('click', () => {
+        const doc = _liveAnalyses.find(d => d.id === card.dataset.id);
+        if (doc) openDocModal(doc);
       });
     });
 
-    // Re-bind clear btn (since we rebuilt the DOM)
-    const clearBtn = dropdown.querySelector('#notif-clear');
-    if (clearBtn) {
-      clearBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        dropdown.querySelectorAll('.notif-dot-left').forEach(d => d.style.opacity = '0');
-        dropdown.querySelectorAll('.notif-item').forEach(i => i.classList.remove('unread'));
-        if (dot) dot.style.display = 'none';
-        dropdown.classList.add('hidden');
-        showToast('✓', 'Notifications cleared');
-      });
-    }
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeDocModal(); });
+    initSwipeToClose($('doc-modal'), closeDocModal);
   }
 
   function navigateTo(page) {
