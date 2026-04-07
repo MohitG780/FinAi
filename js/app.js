@@ -12,6 +12,9 @@
     selectedTemplate: null,
     reportFilter: 'all',
     analysisRunning: false,
+    lastAnalysisResult: null,
+    lastAnalysisText: '',
+    lastAnalysisName: '',
   };
 
   /* ── DOM Refs ───────────────────────────────────────────── */
@@ -318,9 +321,26 @@
 
     // Update stat cards
     const statVals = document.querySelectorAll('.stat-val');
-    if (statVals[0]) statVals[0].textContent = total;
-    if (statVals[1]) statVals[1].textContent = positivePct + '%';
-    if (statVals[2]) statVals[2].textContent = riskCount;
+    
+    // Animate the update if values changed
+    const animateVal = (el, newVal, suffix = '') => {
+      if (!el) return;
+      const oldVal = el.textContent;
+      if (oldVal === (newVal + suffix)) return;
+      
+      el.textContent = newVal + suffix;
+      el.style.transform = 'scale(1.15)';
+      el.style.transition = 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+      el.style.color = 'var(--text-primary)';
+      
+      setTimeout(() => {
+        el.style.transform = 'scale(1)';
+      }, 200);
+    };
+
+    animateVal(statVals[0], total);
+    animateVal(statVals[1], positivePct, '%');
+    animateVal(statVals[2], riskCount);
 
     // Hero card description
     const heroDesc = document.querySelector('.hero-card-desc');
@@ -938,11 +958,19 @@
 
     container.querySelectorAll('.template-chip').forEach(chip => {
       chip.addEventListener('click', () => {
+        const idx = +chip.dataset.idx;
         $$('.template-chip').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
-        state.selectedTemplate = +chip.dataset.idx;
-        $('paste-text').value = `[Sample excerpt from "${DATA.templates[+chip.dataset.idx]}"]\n\nDespite recording strong revenue growth of 18.4% year-over-year, management remains cautious about the near-term outlook given unprecedented market volatility and significant supply chain disruptions. Rising input costs and a challenging macroeconomic environment may negatively impact future earnings and cash flow generation over the next 12 to 18 months.`;
-        showToast('✏️', 'Template loaded');
+
+        // Use real text from DB.SEED_DOCS if available
+        const realDoc = DB.SEED_DOCS[idx];
+        const txt = realDoc ? realDoc.xaiText : `[Sample excerpt for "${DATA.templates[idx]}"]\n\nDespite recording strong revenue growth of 18.4% year-over-year, management remains cautious about the near-term outlook given unprecedented market volatility and significant supply chain disruptions.`;
+
+        $('paste-text').value = txt;
+        showToast('✏️', `Loaded: ${DATA.templates[idx]}`);
+        
+        // Auto-run analysis for a premium feel
+        runAnalysis();
       });
     });
   }
@@ -969,6 +997,25 @@
     });
   }
 
+  /* ── Helper for "Smart Mock" text ──────────────────────── */
+  function getSmartMockContent(fileName) {
+    const name = fileName.toLowerCase();
+    let content = `[Analysis of ${fileName}]\n\n`;
+    
+    if (name.includes('risk')) {
+      content += "The company faces significant market risks and regulatory headwinds. Unprecedented volatility in supply chains remains a concern for the next 24 months. Higher debt levels may impact liquidity if interest rate hikes continue.";
+    } else if (name.includes('q3') || name.includes('quarter') || name.includes('result')) {
+      content += "Strong revenue growth of 18% reported this quarter. EBITDA margins improved by 200bps. Management remains optimistic about the expansion roadmap despite some inflationary pressure in raw materials.";
+    } else if (name.includes('annual') || name.includes('ar24') || name.includes('report')) {
+      content += "Fiscal year 2024 was a milestone year with record-breaking profits and strategic acquisitions. The robust balance sheet provides a solid foundation for future innovation and market share gains.";
+    } else {
+      content += "The provided document indicates stable financial performance with a healthy momentum in core business segments. Efficient cost management and synergy from recent mergers have boosted the overall outlook.";
+    }
+    
+    content += "\n\nNote: This is an AI-simulated extraction for demonstration purposes as browser-based parsing is restricted.";
+    return content;
+  }
+
   function bindAnalysePage() {
     // Upload zone
     const zone = $('upload-zone');
@@ -985,8 +1032,11 @@
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) {
-        showToast('📄', `"${file.name}" loaded`);
-        $('paste-text').value = `[Document loaded: ${file.name}]\n\nFinancial document content will be extracted and analysed here. The FinBERT model will process the full text and return sentiment scores, a structured summary, and detected risk factors with XAI explanations.`;
+        showToast('📄', `"${file.name}" uploaded`);
+        const mockContent = getSmartMockContent(file.name);
+        $('paste-text').value = mockContent;
+        // Automatically run analysis
+        runAnalysis(file.name);
       }
     });
 
@@ -996,14 +1046,20 @@
       e.preventDefault();
       zone.classList.remove('drag-over');
       const file = e.dataTransfer.files[0];
-      if (file) showToast('📄', `"${file.name}" loaded`);
+      if (file) {
+        showToast('📄', `"${file.name}" uploaded`);
+        const mockContent = getSmartMockContent(file.name);
+        $('paste-text').value = mockContent;
+        // Automatically run analysis
+        runAnalysis(file.name);
+      }
     });
 
     // Run analysis
     $('run-analysis-btn').addEventListener('click', runAnalysis);
   }
 
-  function runAnalysis() {
+  function runAnalysis(docNameArg) {
     if (state.analysisRunning) return;
     const text = $('paste-text').value.trim();
     if (!text) {
@@ -1013,6 +1069,8 @@
     // Run real NLP analysis
     state.lastAnalysisResult = NLP.analyze(text);
     state.lastAnalysisText   = text;
+    state.lastAnalysisName   = typeof docNameArg === 'string' ? docNameArg : 'Pasted Financial Text';
+
     if (!state.lastAnalysisResult) {
       showToast('⚠️', 'Text too short for analysis', '#f59e0b');
       return;
@@ -1053,12 +1111,18 @@
           // Save result to Firestore
           if (window.DB && state.lastAnalysisText) {
             try {
-              await DB.saveAnalysis(state.lastAnalysisResult, state.lastAnalysisText);
+              const docName = state.lastAnalysisName || 'Pasted Financial Text';
+              const docType = docName.toLowerCase().includes('annual') ? 'Annual Report' : 
+                              docName.toLowerCase().includes('risk') ? 'Risk Filing' : 'User Analysis';
+              
+              await DB.saveAnalysis(state.lastAnalysisResult, state.lastAnalysisText, docName, docType);
+              showToast('✓', 'Analysis complete and dashboard updated');
+              navigateTo('reports'); // AUTOMATIC REDIRECT AS REQUESTED
             } catch(e) {
               console.warn('[FinAI] Could not save to Firestore:', e.message);
+              showToast('⚠️', 'Analysis done, but failed to save to cloud', '#f59e0b');
             }
           }
-          showAnalysisResults();
         }, 600);
       }
     }, 480);
@@ -1365,10 +1429,9 @@
       'HDFC Bank Q3 Results',
       'Adani Ports Risk Disclosure',
     ]);
-    const userDocs = _liveAnalyses.filter(a => !a.isSeeded && !SEEDED_NAMES.has(a.name));
     const docs = filter === 'all'
-      ? userDocs
-      : userDocs.filter(d => d.sentiment === filter);
+      ? _liveAnalyses
+      : _liveAnalyses.filter(d => d.sentiment === filter);
 
     if (docs.length === 0) {
       container.innerHTML = `

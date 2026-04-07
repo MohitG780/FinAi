@@ -14,6 +14,7 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body>
@@ -305,7 +306,7 @@
         <div class="hero-card">
           <div class="hero-card-bg"></div>
           <div class="hero-card-content">
-            <p class="hero-card-label">AI READINESS SCORE</p>
+            <p class="hero-card-label">PORTFOLIO AI SCORE</p>
             <div class="hero-score-row">
               <span class="hero-score">--</span>
               <span class="hero-score-unit">/100</span>
@@ -327,7 +328,7 @@
         <!-- Stats Row -->
         <div class="stats-row">
           <div class="stat-card" data-color="blue" data-nav="reports" style="cursor:pointer" title="View all analyses">
-            <div class="stat-icon">📄</div>
+            <div class="stat-icon">📁</div>
             <span class="stat-val">0</span>
             <span class="stat-lbl">Docs Analysed</span>
           </div>
@@ -340,7 +341,7 @@
           <div class="stat-card" data-color="amber" data-nav="risks" style="cursor:pointer" title="View detected risks">
             <div class="stat-icon">⚠️</div>
             <span class="stat-val">0</span>
-            <span class="stat-lbl">Risks Found</span>
+            <span class="stat-lbl">Identified Risks</span>
           </div>
         </div>
 
@@ -488,8 +489,8 @@
       <!-- ====== PAGE: REPORTS ====== -->
       <section class="page" id="page-reports">
         <div class="page-header">
-          <h2 class="page-title">Reports</h2>
-          <p class="page-subtitle">Saved analyses and generated reports</p>
+          <h2 class="page-title">Personal Reports</h2>
+          <p class="page-subtitle">Your private financial analysis repository</p>
         </div>
 
         <!-- Filter Tabs -->
@@ -647,7 +648,7 @@
         </div>
 
         <div class="about-tech-card">
-          <div class="about-tech-icon" style="background:rgba(59,130,246,0.15);color:#3b82f6">🧠</div>
+          <div class="about-tech-icon" style="background:rgba(59,130,246,0.15);color:#3b82f6"><i data-lucide="brain"></i></div>
           <div class="about-tech-info">
             <p class="about-tech-name">FinBERT</p>
             <p class="about-tech-desc">A BERT Transformer pre-trained on financial text (annual reports, SEC filings,
@@ -656,7 +657,7 @@
         </div>
 
         <div class="about-tech-card">
-          <div class="about-tech-icon" style="background:rgba(139,92,246,0.15);color:#8b5cf6">🔍</div>
+          <div class="about-tech-icon" style="background:rgba(139,92,246,0.15);color:#8b5cf6"><i data-lucide="search"></i></div>
           <div class="about-tech-info">
             <p class="about-tech-name">LIME / SHAP (XAI)</p>
             <p class="about-tech-desc">Explainable AI libraries that highlight which words and phrases drove the model's
@@ -665,7 +666,7 @@
         </div>
 
         <div class="about-tech-card">
-          <div class="about-tech-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b">📊</div>
+          <div class="about-tech-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b"><i data-lucide="bar-chart-3"></i></div>
           <div class="about-tech-info">
             <p class="about-tech-name">Sentiment Analysis</p>
             <p class="about-tech-desc">Classifies financial text as Positive, Neutral, or Negative with a confidence
@@ -674,7 +675,7 @@
         </div>
 
         <div class="about-tech-card">
-          <div class="about-tech-icon" style="background:rgba(34,197,94,0.15);color:#22c55e">📝</div>
+          <div class="about-tech-icon" style="background:rgba(34,197,94,0.15);color:#22c55e"><i data-lucide="file-text"></i></div>
           <div class="about-tech-info">
             <p class="about-tech-name">NLP Summarisation</p>
             <p class="about-tech-desc">Extracts the most important key points from long financial documents, saving
@@ -683,7 +684,7 @@
         </div>
 
         <div class="about-tech-card">
-          <div class="about-tech-icon" style="background:rgba(239,68,68,0.15);color:#ef4444">⚠️</div>
+          <div class="about-tech-icon" style="background:rgba(239,68,68,0.15);color:#ef4444"><i data-lucide="alert-triangle"></i></div>
           <div class="about-tech-info">
             <p class="about-tech-name">Risk NER</p>
             <p class="about-tech-desc">Named Entity Recognition trained to identify and classify financial risk
@@ -717,6 +718,9 @@
   <script type="module" src="js/charts.js"></script>
   <script type="module" src="js/particles.js"></script>
   <script type="module" src="js/app.js"></script>
+  <script>
+    setTimeout(() => { if(window.lucide) lucide.createIcons(); }, 1000);
+  </script>
 </body>
 
 </html>
