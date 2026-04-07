@@ -487,14 +487,33 @@
     });
 
     $('hero-analyse-btn').addEventListener('click', () => navigateTo('analyse'));
-    $('see-all-btn').addEventListener('click', () => navigateTo('reports'));
+    $('see-all-btn').addEventListener('click', () => openAllAnalysesSheet());
 
-    // Notification button
+    // Notification bell → open bottom sheet
     $('notif-btn').addEventListener('click', (e) => {
       e.stopPropagation();
       $('user-dropdown').classList.add('hidden');
-      const dd = $('notif-dropdown');
-      dd.classList.toggle('hidden');
+      const overlay = $('notif-overlay');
+      overlay.classList.remove('hidden');
+      // Close on backdrop click
+      overlay.addEventListener('click', (ev) => {
+        if (ev.target === overlay) overlay.classList.add('hidden');
+      }, { once: true });
+      // Swipe-down to close
+      initSwipeToClose($('notif-sheet'), () => overlay.classList.add('hidden'));
+    });
+
+    // Re-bind clear in sheet
+    document.addEventListener('click', (e) => {
+      if (e.target && e.target.id === 'notif-clear') {
+        e.stopPropagation();
+        document.querySelectorAll('#notif-list .notif-item').forEach(i => i.classList.remove('unread'));
+        document.querySelectorAll('#notif-list .notif-dot-left').forEach(d => d.style.opacity = '0');
+        const dot = $('notif-btn') && $('notif-btn').querySelector('.notif-dot');
+        if (dot) dot.style.display = 'none';
+        $('notif-overlay').classList.add('hidden');
+        showToast('\u2713', 'Notifications cleared');
+      }
     });
 
     // User avatar chip → toggle user dropdown
@@ -541,7 +560,6 @@
 
     // Close dropdowns on outside click
     document.addEventListener('click', () => {
-      $('notif-dropdown').classList.add('hidden');
       $('user-dropdown').classList.add('hidden');
     });
 

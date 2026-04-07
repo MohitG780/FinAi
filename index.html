@@ -504,14 +504,21 @@
     <div class="toast-text" id="toast-text">Done!</div>
   </div>
 
-  <!-- Notification Dropdown -->
-  <div class="notif-dropdown hidden" id="notif-dropdown">
-    <div class="notif-dropdown-header">
-      <span class="notif-dropdown-title">Notifications</span>
-      <button class="notif-clear-btn" id="notif-clear">Clear all</button>
+  <!-- Notification Bottom Sheet -->
+  <div class="modal-overlay hidden" id="notif-overlay">
+    <div class="modal-sheet" id="notif-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-content">
+        <div class="notif-sheet-header">
+          <h3 class="notif-sheet-title">Notifications</h3>
+          <button class="notif-clear-btn" id="notif-clear">Clear all</button>
+        </div>
+        <div id="notif-list"><!-- populated by JS --></div>
+      </div>
     </div>
-    <!-- populated dynamically by JS from Firestore -->
   </div>
+  <!-- legacy alias so renderNotifications() still finds the element -->
+  <div class="hidden" id="notif-dropdown"></div>
 
   <!-- About / Tech Stack Modal -->
   <div class="modal-overlay hidden" id="about-modal-overlay">
